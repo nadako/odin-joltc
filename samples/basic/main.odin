@@ -1,9 +1,9 @@
-package sample
+package main
 
 import "base:runtime"
 import "core:fmt"
 import "core:log"
-import "../jolt"
+import "../../jolt"
 
 g_context: runtime.Context
 
