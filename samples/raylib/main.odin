@@ -22,6 +22,10 @@ QUAT_IDENTITY: Quat = 1
 VEC3_ZERO: Vec3 = 0
 
 Box :: struct {
+    // for interpolating physics
+    prev_position: Vec3,
+    prev_rotation: Quat,
+
     position: Vec3,
     rotation: Quat,
     extent: Vec3,
@@ -47,16 +51,20 @@ add_box :: proc(box: Box) {
     jolt.BodyInterface_AddBody(g_body_iface, jolt.Body_GetID(box.body), .Activate)
     jolt.BodyCreationSettings_Destroy(box_settings)
 
+    box.prev_position = box.position
+    box.prev_rotation = box.rotation
+
     append(&boxes, box)
 }
 
 add_floor :: proc() {
-    floor_extent: Vec3 = {100, 0.1, 100}
+    floor_extent := Vec3 {100, 0.05, 100}
+    floot_position := Vec3 {0, -0.05, 0}
     floor_shape := jolt.BoxShape_Create(&floor_extent, 0)
     defer jolt.Shape_Destroy(auto_cast floor_shape)
     floor_settings := jolt.BodyCreationSettings_Create3(
         shape = auto_cast floor_shape,
-        position = &VEC3_ZERO,
+        position = &floot_position,
         rotation = &QUAT_IDENTITY,
         motionType = .Static,
         objectLayer = PHYS_LAYER_NON_MOVING,
@@ -104,10 +112,10 @@ main :: proc() {
     g_body_iface = jolt.PhysicsSystem_GetBodyInterface(physics_system)
 
     add_floor()
-    add_box({ position = {0,    0.5, -3  }, extent = 0.75, rotation = 1, color = rl.RED })
-    add_box({ position = {0.75, 2.5, -3  }, extent = 0.5,  rotation = 1, color = rl.BLUE })
-    add_box({ position = {0.25, 5,   -2.5}, extent = 0.25, rotation = 1, color = rl.GREEN })
-    add_box({ position = {0.25, 5,   -2.5}, extent = {1, 0.25, 0.5}, rotation = 1, color = rl.PURPLE })
+    add_box({ position = { 0,    0.75, -3   }, extent = 0.75, rotation = 1, color = rl.RED })
+    add_box({ position = { 0.75, 2.5,  -3   }, extent = 0.5,  rotation = 1, color = rl.BLUE })
+    add_box({ position = { 0.25, 5,    -2.5 }, extent = 0.25, rotation = 1, color = rl.GREEN })
+    add_box({ position = { 0.25, 5,    -2.5 }, extent = {1, 0.25, 0.5}, rotation = 1, color = rl.PURPLE })
 
     rl.InitWindow(1200, 900, "Jolt")
     rl.DisableCursor()
@@ -120,15 +128,26 @@ main :: proc() {
         target = {0, 2, -1},
     }
 
+	fixed_update_accumulator: f32
+	fixed_step: f32 = 1.0 / 30.0
+
     for !rl.WindowShouldClose() {
         dt := rl.GetFrameTime()
 
-        jolt.PhysicsSystem_Update(physics_system, dt, 1, jolt_job_system)
+        fixed_update_accumulator += dt
+		for fixed_update_accumulator >= fixed_step {
+			fixed_update_accumulator -= fixed_step
+            jolt.PhysicsSystem_Update(physics_system, fixed_step, 1, jolt_job_system)
 
-        for &box in boxes {
-            jolt.Body_GetPosition(box.body, &box.position)
-            jolt.Body_GetRotation(box.body, &box.rotation)
+            for &box in boxes {
+                box.prev_position = box.position
+                box.prev_rotation = box.rotation
+                jolt.Body_GetPosition(box.body, &box.position)
+                jolt.Body_GetRotation(box.body, &box.rotation)
+            }
+
         }
+		fixed_interpolation_delta := fixed_update_accumulator / fixed_step
 
         rl.UpdateCamera(&camera, .FIRST_PERSON)
 
@@ -139,9 +158,12 @@ main :: proc() {
         rl.DrawGrid(100, 1)
 
         for &box in boxes {
+            pos := linalg.lerp(box.prev_position, box.position, fixed_interpolation_delta)
+            rot := linalg.quaternion_slerp(box.prev_rotation, box.rotation, fixed_interpolation_delta)
+            angle, axis := linalg.angle_axis_from_quaternion(rot)
+
             rlgl.PushMatrix()
-            rlgl.Translatef(box.position.x, box.position.y, box.position.z)
-            angle, axis := linalg.angle_axis_from_quaternion(box.rotation)
+            rlgl.Translatef(pos.x, pos.y, pos.z)
             rlgl.Rotatef(linalg.to_degrees(angle), axis.x, axis.y, axis.z)
             rl.DrawCubeV(0, box.extent * 2, box.color)
             rl.DrawCubeWiresV(0, box.extent * 2, rl.BLACK)
