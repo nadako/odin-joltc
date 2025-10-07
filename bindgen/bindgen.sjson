@@ -1,0 +1,17 @@
+inputs = [ "../joltc/include/joltc.h" ]
+output_folder = "generated"
+remove_type_prefix = "JPH_"
+remove_macro_prefix = "JPH_"
+remove_function_prefix = "JPH_"
+import_lib = "joltc.lib"
+package_name = "jolt"
+type_overrides = {
+    "JPH_Vec3" = "[3]f32"
+    "JPH_Vec4" = "[4]f32"
+    "JPH_Quat" = "quaternion128"
+    "JPH_Matrix4x4" = "matrix[4,4]f32"
+}
+remove_macros = [
+    "JOLT_C_H_"
+    "JPH_CAPI"
+]
