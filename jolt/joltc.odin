@@ -273,11 +273,11 @@ Plane :: struct {
 	distance: f32,
 }
 
-Matrix4x4 :: matrix[4,4]f32
+Mat4 :: matrix[4,4]f32
 
 RVec3 :: Vec3
 
-RMatrix4x4 :: Matrix4x4
+RMat4 :: Mat4
 
 Color :: u32
 
@@ -309,7 +309,7 @@ IndexedTriangle :: struct {
 
 MassProperties :: struct {
 	mass:    f32,
-	inertia: Matrix4x4,
+	inertia: Mat4,
 }
 
 ContactSettings :: struct {
@@ -845,8 +845,8 @@ CharacterContactListener_Procs :: struct {
 
 /* JPH_CharacterVsCharacterCollision */
 CharacterVsCharacterCollision_Procs :: struct {
-	CollideCharacter: proc "c" (rawptr, ^CharacterVirtual, ^RMatrix4x4, ^CollideShapeSettings, ^RVec3),
-	CastCharacter:    proc "c" (rawptr, ^CharacterVirtual, ^RMatrix4x4, ^Vec3, ^ShapeCastSettings, ^RVec3),
+	CollideCharacter: proc "c" (rawptr, ^CharacterVirtual, ^RMat4, ^CollideShapeSettings, ^RVec3),
+	CastCharacter:    proc "c" (rawptr, ^CharacterVirtual, ^RMat4, ^Vec3, ^ShapeCastSettings, ^RVec3),
 }
 
 /* DebugRenderer */
@@ -974,80 +974,72 @@ foreign lib {
 	PhysicsStepListener_Destroy                :: proc(listener: ^PhysicsStepListener) ---
 
 	/* Math */
-	Math_Sin                              :: proc(value: f32) -> f32 ---
-	Math_Cos                              :: proc(value: f32) -> f32 ---
-	Quat_FromTo                           :: proc(from: ^Vec3, to: ^Vec3, quat: ^Quat) ---
-	Quat_GetAxisAngle                     :: proc(quat: ^Quat, outAxis: ^Vec3, outAngle: ^f32) ---
-	Quat_GetEulerAngles                   :: proc(quat: ^Quat, result: ^Vec3) ---
-	Quat_RotateAxisX                      :: proc(quat: ^Quat, result: ^Vec3) ---
-	Quat_RotateAxisY                      :: proc(quat: ^Quat, result: ^Vec3) ---
-	Quat_RotateAxisZ                      :: proc(quat: ^Quat, result: ^Vec3) ---
-	Quat_Inversed                         :: proc(quat: ^Quat, result: ^Quat) ---
-	Quat_GetPerpendicular                 :: proc(quat: ^Quat, result: ^Quat) ---
-	Quat_GetRotationAngle                 :: proc(quat: ^Quat, axis: ^Vec3) -> f32 ---
-	Quat_FromEulerAngles                  :: proc(angles: ^Vec3, result: ^Quat) ---
-	Quat_Add                              :: proc(q1: ^Quat, q2: ^Quat, result: ^Quat) ---
-	Quat_Subtract                         :: proc(q1: ^Quat, q2: ^Quat, result: ^Quat) ---
-	Quat_Multiply                         :: proc(q1: ^Quat, q2: ^Quat, result: ^Quat) ---
-	Quat_MultiplyScalar                   :: proc(q: ^Quat, scalar: f32, result: ^Quat) ---
-	Quat_DivideScalar                     :: proc(q: ^Quat, scalar: f32, result: ^Quat) ---
-	Quat_Dot                              :: proc(q1: ^Quat, q2: ^Quat, result: ^f32) ---
-	Quat_Conjugated                       :: proc(quat: ^Quat, result: ^Quat) ---
-	Quat_GetTwist                         :: proc(quat: ^Quat, axis: ^Vec3, result: ^Quat) ---
-	Quat_GetSwingTwist                    :: proc(quat: ^Quat, outSwing: ^Quat, outTwist: ^Quat) ---
-	Quat_Lerp                             :: proc(from: ^Quat, to: ^Quat, fraction: f32, result: ^Quat) ---
-	Quat_Slerp                            :: proc(from: ^Quat, to: ^Quat, fraction: f32, result: ^Quat) ---
-	Quat_Rotate                           :: proc(quat: ^Quat, vec: ^Vec3, result: ^Vec3) ---
-	Quat_InverseRotate                    :: proc(quat: ^Quat, vec: ^Vec3, result: ^Vec3) ---
-	Vec3_AxisX                            :: proc(result: ^Vec3) ---
-	Vec3_AxisY                            :: proc(result: ^Vec3) ---
-	Vec3_AxisZ                            :: proc(result: ^Vec3) ---
-	Vec3_IsClose                          :: proc(v1: ^Vec3, v2: ^Vec3, maxDistSq: f32) -> bool ---
-	Vec3_IsNearZero                       :: proc(v: ^Vec3, maxDistSq: f32) -> bool ---
-	Vec3_IsNormalized                     :: proc(v: ^Vec3, tolerance: f32) -> bool ---
-	Vec3_IsNaN                            :: proc(v: ^Vec3) -> bool ---
-	Vec3_Negate                           :: proc(v: ^Vec3, result: ^Vec3) ---
-	Vec3_Normalized                       :: proc(v: ^Vec3, result: ^Vec3) ---
-	Vec3_Cross                            :: proc(v1: ^Vec3, v2: ^Vec3, result: ^Vec3) ---
-	Vec3_Abs                              :: proc(v: ^Vec3, result: ^Vec3) ---
-	Vec3_Length                           :: proc(v: ^Vec3) -> f32 ---
-	Vec3_LengthSquared                    :: proc(v: ^Vec3) -> f32 ---
-	Vec3_DotProduct                       :: proc(v1: ^Vec3, v2: ^Vec3, result: ^f32) ---
-	Vec3_Normalize                        :: proc(v: ^Vec3, result: ^Vec3) ---
-	Vec3_Add                              :: proc(v1: ^Vec3, v2: ^Vec3, result: ^Vec3) ---
-	Vec3_Subtract                         :: proc(v1: ^Vec3, v2: ^Vec3, result: ^Vec3) ---
-	Vec3_Multiply                         :: proc(v1: ^Vec3, v2: ^Vec3, result: ^Vec3) ---
-	Vec3_MultiplyScalar                   :: proc(v: ^Vec3, scalar: f32, result: ^Vec3) ---
-	Vec3_MultiplyMatrix                   :: proc(left: ^Matrix4x4, right: ^Vec3, result: ^Vec3) ---
-	Vec3_Divide                           :: proc(v1: ^Vec3, v2: ^Vec3, result: ^Vec3) ---
-	Vec3_DivideScalar                     :: proc(v: ^Vec3, scalar: f32, result: ^Vec3) ---
-	Matrix4x4_Add                         :: proc(m1: ^Matrix4x4, m2: ^Matrix4x4, result: ^Matrix4x4) ---
-	Matrix4x4_Subtract                    :: proc(m1: ^Matrix4x4, m2: ^Matrix4x4, result: ^Matrix4x4) ---
-	Matrix4x4_Multiply                    :: proc(m1: ^Matrix4x4, m2: ^Matrix4x4, result: ^Matrix4x4) ---
-	Matrix4x4_MultiplyScalar              :: proc(m: ^Matrix4x4, scalar: f32, result: ^Matrix4x4) ---
-	Matrix4x4_Zero                        :: proc(result: ^Matrix4x4) ---
-	Matrix4x4_Identity                    :: proc(result: ^Matrix4x4) ---
-	Matrix4x4_Rotation                    :: proc(result: ^Matrix4x4, rotation: ^Quat) ---
-	Matrix4x4_Rotation2                   :: proc(result: ^Matrix4x4, axis: ^Vec3, angle: f32) ---
-	Matrix4x4_Translation                 :: proc(result: ^Matrix4x4, translation: ^Vec3) ---
-	Matrix4x4_RotationTranslation         :: proc(result: ^Matrix4x4, rotation: ^Quat, translation: ^Vec3) ---
-	Matrix4x4_InverseRotationTranslation  :: proc(result: ^Matrix4x4, rotation: ^Quat, translation: ^Vec3) ---
-	Matrix4x4_Scale                       :: proc(result: ^Matrix4x4, scale: ^Vec3) ---
-	Matrix4x4_Inversed                    :: proc(m: ^Matrix4x4, result: ^Matrix4x4) ---
-	Matrix4x4_Transposed                  :: proc(m: ^Matrix4x4, result: ^Matrix4x4) ---
-	RMatrix4x4_Zero                       :: proc(result: ^RMatrix4x4) ---
-	RMatrix4x4_Identity                   :: proc(result: ^RMatrix4x4) ---
-	RMatrix4x4_Rotation                   :: proc(result: ^RMatrix4x4, rotation: ^Quat) ---
-	RMatrix4x4_Translation                :: proc(result: ^RMatrix4x4, translation: ^RVec3) ---
-	RMatrix4x4_RotationTranslation        :: proc(result: ^RMatrix4x4, rotation: ^Quat, translation: ^RVec3) ---
-	RMatrix4x4_InverseRotationTranslation :: proc(result: ^RMatrix4x4, rotation: ^Quat, translation: ^RVec3) ---
-	RMatrix4x4_Scale                      :: proc(result: ^RMatrix4x4, scale: ^Vec3) ---
-	RMatrix4x4_Inversed                   :: proc(m: ^RMatrix4x4, result: ^RMatrix4x4) ---
-	Matrix4x4_GetAxisX                    :: proc(_matrix: ^Matrix4x4, result: ^Vec3) ---
-	Matrix4x4_GetAxisY                    :: proc(_matrix: ^Matrix4x4, result: ^Vec3) ---
-	Matrix4x4_GetAxisZ                    :: proc(_matrix: ^Matrix4x4, result: ^Vec3) ---
-	Matrix4x4_GetTranslation              :: proc(_matrix: ^Matrix4x4, result: ^Vec3) ---
-	Matrix4x4_GetQuaternion               :: proc(_matrix: ^Matrix4x4, result: ^Quat) ---
+	Math_Sin                        :: proc(value: f32) -> f32 ---
+	Math_Cos                        :: proc(value: f32) -> f32 ---
+	Quat_FromTo                     :: proc(from: ^Vec3, to: ^Vec3, quat: ^Quat) ---
+	Quat_GetAxisAngle               :: proc(quat: ^Quat, outAxis: ^Vec3, outAngle: ^f32) ---
+	Quat_GetEulerAngles             :: proc(quat: ^Quat, result: ^Vec3) ---
+	Quat_RotateAxisX                :: proc(quat: ^Quat, result: ^Vec3) ---
+	Quat_RotateAxisY                :: proc(quat: ^Quat, result: ^Vec3) ---
+	Quat_RotateAxisZ                :: proc(quat: ^Quat, result: ^Vec3) ---
+	Quat_Inversed                   :: proc(quat: ^Quat, result: ^Quat) ---
+	Quat_GetPerpendicular           :: proc(quat: ^Quat, result: ^Quat) ---
+	Quat_GetRotationAngle           :: proc(quat: ^Quat, axis: ^Vec3) -> f32 ---
+	Quat_FromEulerAngles            :: proc(angles: ^Vec3, result: ^Quat) ---
+	Quat_Add                        :: proc(q1: ^Quat, q2: ^Quat, result: ^Quat) ---
+	Quat_Subtract                   :: proc(q1: ^Quat, q2: ^Quat, result: ^Quat) ---
+	Quat_Multiply                   :: proc(q1: ^Quat, q2: ^Quat, result: ^Quat) ---
+	Quat_MultiplyScalar             :: proc(q: ^Quat, scalar: f32, result: ^Quat) ---
+	Quat_DivideScalar               :: proc(q: ^Quat, scalar: f32, result: ^Quat) ---
+	Quat_Dot                        :: proc(q1: ^Quat, q2: ^Quat, result: ^f32) ---
+	Quat_Conjugated                 :: proc(quat: ^Quat, result: ^Quat) ---
+	Quat_GetTwist                   :: proc(quat: ^Quat, axis: ^Vec3, result: ^Quat) ---
+	Quat_GetSwingTwist              :: proc(quat: ^Quat, outSwing: ^Quat, outTwist: ^Quat) ---
+	Quat_Lerp                       :: proc(from: ^Quat, to: ^Quat, fraction: f32, result: ^Quat) ---
+	Quat_Slerp                      :: proc(from: ^Quat, to: ^Quat, fraction: f32, result: ^Quat) ---
+	Quat_Rotate                     :: proc(quat: ^Quat, vec: ^Vec3, result: ^Vec3) ---
+	Quat_InverseRotate              :: proc(quat: ^Quat, vec: ^Vec3, result: ^Vec3) ---
+	Vec3_AxisX                      :: proc(result: ^Vec3) ---
+	Vec3_AxisY                      :: proc(result: ^Vec3) ---
+	Vec3_AxisZ                      :: proc(result: ^Vec3) ---
+	Vec3_IsClose                    :: proc(v1: ^Vec3, v2: ^Vec3, maxDistSq: f32) -> bool ---
+	Vec3_IsNearZero                 :: proc(v: ^Vec3, maxDistSq: f32) -> bool ---
+	Vec3_IsNormalized               :: proc(v: ^Vec3, tolerance: f32) -> bool ---
+	Vec3_IsNaN                      :: proc(v: ^Vec3) -> bool ---
+	Vec3_Negate                     :: proc(v: ^Vec3, result: ^Vec3) ---
+	Vec3_Normalized                 :: proc(v: ^Vec3, result: ^Vec3) ---
+	Vec3_Cross                      :: proc(v1: ^Vec3, v2: ^Vec3, result: ^Vec3) ---
+	Vec3_Abs                        :: proc(v: ^Vec3, result: ^Vec3) ---
+	Vec3_Length                     :: proc(v: ^Vec3) -> f32 ---
+	Vec3_LengthSquared              :: proc(v: ^Vec3) -> f32 ---
+	Vec3_DotProduct                 :: proc(v1: ^Vec3, v2: ^Vec3, result: ^f32) ---
+	Vec3_Normalize                  :: proc(v: ^Vec3, result: ^Vec3) ---
+	Vec3_Add                        :: proc(v1: ^Vec3, v2: ^Vec3, result: ^Vec3) ---
+	Vec3_Subtract                   :: proc(v1: ^Vec3, v2: ^Vec3, result: ^Vec3) ---
+	Vec3_Multiply                   :: proc(v1: ^Vec3, v2: ^Vec3, result: ^Vec3) ---
+	Vec3_MultiplyScalar             :: proc(v: ^Vec3, scalar: f32, result: ^Vec3) ---
+	Vec3_MultiplyMatrix             :: proc(left: ^Mat4, right: ^Vec3, result: ^Vec3) ---
+	Vec3_Divide                     :: proc(v1: ^Vec3, v2: ^Vec3, result: ^Vec3) ---
+	Vec3_DivideScalar               :: proc(v: ^Vec3, scalar: f32, result: ^Vec3) ---
+	Mat4_Add                        :: proc(m1: ^Mat4, m2: ^Mat4, result: ^Mat4) ---
+	Mat4_Subtract                   :: proc(m1: ^Mat4, m2: ^Mat4, result: ^Mat4) ---
+	Mat4_Multiply                   :: proc(m1: ^Mat4, m2: ^Mat4, result: ^Mat4) ---
+	Mat4_MultiplyScalar             :: proc(m: ^Mat4, scalar: f32, result: ^Mat4) ---
+	Mat4_Zero                       :: proc(result: ^Mat4) ---
+	Mat4_Identity                   :: proc(result: ^Mat4) ---
+	Mat4_Rotation                   :: proc(result: ^Mat4, rotation: ^Quat) ---
+	Mat4_Rotation2                  :: proc(result: ^Mat4, axis: ^Vec3, angle: f32) ---
+	Mat4_Translation                :: proc(result: ^Mat4, translation: ^Vec3) ---
+	Mat4_RotationTranslation        :: proc(result: ^Mat4, rotation: ^Quat, translation: ^Vec3) ---
+	Mat4_InverseRotationTranslation :: proc(result: ^Mat4, rotation: ^Quat, translation: ^Vec3) ---
+	Mat4_Scale                      :: proc(result: ^Mat4, scale: ^Vec3) ---
+	Mat4_Transposed                 :: proc(m: ^Mat4, result: ^Mat4) ---
+	Mat4_Inversed                   :: proc(_matrix: ^Mat4, result: ^Mat4) ---
+	Mat4_GetAxisX                   :: proc(_matrix: ^Mat4, result: ^Vec3) ---
+	Mat4_GetAxisY                   :: proc(_matrix: ^Mat4, result: ^Vec3) ---
+	Mat4_GetAxisZ                   :: proc(_matrix: ^Mat4, result: ^Vec3) ---
+	Mat4_GetTranslation             :: proc(_matrix: ^Mat4, result: ^Vec3) ---
+	Mat4_GetQuaternion              :: proc(_matrix: ^Mat4, result: ^Quat) ---
 
 	/* Material */
 	PhysicsMaterial_Create        :: proc(name: cstring, color: u32) -> ^PhysicsMaterial ---
@@ -1078,13 +1070,13 @@ foreign lib {
 	Shape_GetCenterOfMass            :: proc(shape: ^Shape, result: ^Vec3) ---
 	Shape_GetLocalBounds             :: proc(shape: ^Shape, result: ^AABox) ---
 	Shape_GetSubShapeIDBitsRecursive :: proc(shape: ^Shape) -> u32 ---
-	Shape_GetWorldSpaceBounds        :: proc(shape: ^Shape, centerOfMassTransform: ^RMatrix4x4, scale: ^Vec3, result: ^AABox) ---
+	Shape_GetWorldSpaceBounds        :: proc(shape: ^Shape, centerOfMassTransform: ^RMat4, scale: ^Vec3, result: ^AABox) ---
 	Shape_GetInnerRadius             :: proc(shape: ^Shape) -> f32 ---
 	Shape_GetMassProperties          :: proc(shape: ^Shape, result: ^MassProperties) ---
 	Shape_GetLeafShape               :: proc(shape: ^Shape, subShapeID: SubShapeID, remainder: ^SubShapeID) -> ^Shape ---
 	Shape_GetMaterial                :: proc(shape: ^Shape, subShapeID: SubShapeID) -> ^PhysicsMaterial ---
 	Shape_GetSurfaceNormal           :: proc(shape: ^Shape, subShapeID: SubShapeID, localPosition: ^Vec3, normal: ^Vec3) ---
-	Shape_GetSupportingFace          :: proc(shape: ^Shape, subShapeID: SubShapeID, direction: ^Vec3, scale: ^Vec3, centerOfMassTransform: ^Matrix4x4, outVertices: ^SupportingFace) ---
+	Shape_GetSupportingFace          :: proc(shape: ^Shape, subShapeID: SubShapeID, direction: ^Vec3, scale: ^Vec3, centerOfMassTransform: ^Mat4, outVertices: ^SupportingFace) ---
 	Shape_GetVolume                  :: proc(shape: ^Shape) -> f32 ---
 	Shape_IsValidScale               :: proc(shape: ^Shape, scale: ^Vec3) -> bool ---
 	Shape_MakeScaleValid             :: proc(shape: ^Shape, scale: ^Vec3, result: ^Vec3) ---
@@ -1340,8 +1332,8 @@ foreign lib {
 	/* JPH_TwoBodyConstraint */
 	TwoBodyConstraint_GetBody1                   :: proc(constraint: ^TwoBodyConstraint) -> ^Body ---
 	TwoBodyConstraint_GetBody2                   :: proc(constraint: ^TwoBodyConstraint) -> ^Body ---
-	TwoBodyConstraint_GetConstraintToBody1Matrix :: proc(constraint: ^TwoBodyConstraint, result: ^Matrix4x4) ---
-	TwoBodyConstraint_GetConstraintToBody2Matrix :: proc(constraint: ^TwoBodyConstraint, result: ^Matrix4x4) ---
+	TwoBodyConstraint_GetConstraintToBody1Matrix :: proc(constraint: ^TwoBodyConstraint, result: ^Mat4) ---
+	TwoBodyConstraint_GetConstraintToBody2Matrix :: proc(constraint: ^TwoBodyConstraint, result: ^Mat4) ---
 
 	/* JPH_FixedConstraint */
 	FixedConstraintSettings_Init           :: proc(settings: ^FixedConstraintSettings) ---
@@ -1542,8 +1534,8 @@ foreign lib {
 	BodyInterface_DeactivateBody                    :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID) ---
 	BodyInterface_GetObjectLayer                    :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID) -> ObjectLayer ---
 	BodyInterface_SetObjectLayer                    :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID, layer: ObjectLayer) ---
-	BodyInterface_GetWorldTransform                 :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID, result: ^RMatrix4x4) ---
-	BodyInterface_GetCenterOfMassTransform          :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID, result: ^RMatrix4x4) ---
+	BodyInterface_GetWorldTransform                 :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID, result: ^RMat4) ---
+	BodyInterface_GetCenterOfMassTransform          :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID, result: ^RMat4) ---
 	BodyInterface_MoveKinematic                     :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID, targetPosition: ^RVec3, targetRotation: ^Quat, deltaTime: f32) ---
 	BodyInterface_ApplyBuoyancyImpulse              :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID, surfacePosition: ^RVec3, surfaceNormal: ^Vec3, buoyancy: f32, linearDrag: f32, angularDrag: f32, fluidVelocity: ^Vec3, gravity: ^Vec3, deltaTime: f32) -> bool ---
 	BodyInterface_SetLinearAndAngularVelocity       :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID, linearVelocity: ^Vec3, angularVelocity: ^Vec3) ---
@@ -1562,7 +1554,7 @@ foreign lib {
 	BodyInterface_AddAngularImpulse                 :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID, angularImpulse: ^Vec3) ---
 	BodyInterface_SetMotionQuality                  :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID, quality: MotionQuality) ---
 	BodyInterface_GetMotionQuality                  :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID) -> MotionQuality ---
-	BodyInterface_GetInverseInertia                 :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID, result: ^Matrix4x4) ---
+	BodyInterface_GetInverseInertia                 :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID, result: ^Mat4) ---
 	BodyInterface_SetGravityFactor                  :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID, value: f32) ---
 	BodyInterface_GetGravityFactor                  :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID) -> f32 ---
 	BodyInterface_SetUseManifoldReduction           :: proc(bodyInterface: ^BodyInterface, bodyId: BodyID, value: bool) ---
@@ -1613,7 +1605,7 @@ foreign lib {
 	//--------------------------------------------------------------------------------------------------
 	// JPH_MassProperties
 	//--------------------------------------------------------------------------------------------------
-	MassProperties_DecomposePrincipalMomentsOfInertia :: proc(properties: ^MassProperties, rotation: ^Matrix4x4, diagonal: ^Vec3) ---
+	MassProperties_DecomposePrincipalMomentsOfInertia :: proc(properties: ^MassProperties, rotation: ^Mat4, diagonal: ^Vec3) ---
 	MassProperties_ScaleToMass                        :: proc(properties: ^MassProperties, mass: f32) ---
 	MassProperties_GetEquivalentSolidBoxSize          :: proc(mass: f32, inertiaDiagonal: ^Vec3, result: ^Vec3) ---
 
@@ -1644,10 +1636,10 @@ foreign lib {
 	NarrowPhaseQuery_CastRay3      :: proc(query: ^NarrowPhaseQuery, origin: ^RVec3, direction: ^Vec3, rayCastSettings: ^RayCastSettings, collectorType: CollisionCollectorType, callback: CastRayResultCallback, userData: rawptr, broadPhaseLayerFilter: ^BroadPhaseLayerFilter, objectLayerFilter: ^ObjectLayerFilter, bodyFilter: ^BodyFilter, shapeFilter: ^ShapeFilter) -> bool ---
 	NarrowPhaseQuery_CollidePoint  :: proc(query: ^NarrowPhaseQuery, point: ^RVec3, callback: CollidePointCollectorCallback, userData: rawptr, broadPhaseLayerFilter: ^BroadPhaseLayerFilter, objectLayerFilter: ^ObjectLayerFilter, bodyFilter: ^BodyFilter, shapeFilter: ^ShapeFilter) -> bool ---
 	NarrowPhaseQuery_CollidePoint2 :: proc(query: ^NarrowPhaseQuery, point: ^RVec3, collectorType: CollisionCollectorType, callback: CollidePointResultCallback, userData: rawptr, broadPhaseLayerFilter: ^BroadPhaseLayerFilter, objectLayerFilter: ^ObjectLayerFilter, bodyFilter: ^BodyFilter, shapeFilter: ^ShapeFilter) -> bool ---
-	NarrowPhaseQuery_CollideShape  :: proc(query: ^NarrowPhaseQuery, shape: ^Shape, scale: ^Vec3, centerOfMassTransform: ^RMatrix4x4, settings: ^CollideShapeSettings, baseOffset: ^RVec3, callback: CollideShapeCollectorCallback, userData: rawptr, broadPhaseLayerFilter: ^BroadPhaseLayerFilter, objectLayerFilter: ^ObjectLayerFilter, bodyFilter: ^BodyFilter, shapeFilter: ^ShapeFilter) -> bool ---
-	NarrowPhaseQuery_CollideShape2 :: proc(query: ^NarrowPhaseQuery, shape: ^Shape, scale: ^Vec3, centerOfMassTransform: ^RMatrix4x4, settings: ^CollideShapeSettings, baseOffset: ^RVec3, collectorType: CollisionCollectorType, callback: CollideShapeResultCallback, userData: rawptr, broadPhaseLayerFilter: ^BroadPhaseLayerFilter, objectLayerFilter: ^ObjectLayerFilter, bodyFilter: ^BodyFilter, shapeFilter: ^ShapeFilter) -> bool ---
-	NarrowPhaseQuery_CastShape     :: proc(query: ^NarrowPhaseQuery, shape: ^Shape, worldTransform: ^RMatrix4x4, direction: ^Vec3, settings: ^ShapeCastSettings, baseOffset: ^RVec3, callback: CastShapeCollectorCallback, userData: rawptr, broadPhaseLayerFilter: ^BroadPhaseLayerFilter, objectLayerFilter: ^ObjectLayerFilter, bodyFilter: ^BodyFilter, shapeFilter: ^ShapeFilter) -> bool ---
-	NarrowPhaseQuery_CastShape2    :: proc(query: ^NarrowPhaseQuery, shape: ^Shape, worldTransform: ^RMatrix4x4, direction: ^Vec3, settings: ^ShapeCastSettings, baseOffset: ^RVec3, collectorType: CollisionCollectorType, callback: CastShapeResultCallback, userData: rawptr, broadPhaseLayerFilter: ^BroadPhaseLayerFilter, objectLayerFilter: ^ObjectLayerFilter, bodyFilter: ^BodyFilter, shapeFilter: ^ShapeFilter) -> bool ---
+	NarrowPhaseQuery_CollideShape  :: proc(query: ^NarrowPhaseQuery, shape: ^Shape, scale: ^Vec3, centerOfMassTransform: ^RMat4, settings: ^CollideShapeSettings, baseOffset: ^RVec3, callback: CollideShapeCollectorCallback, userData: rawptr, broadPhaseLayerFilter: ^BroadPhaseLayerFilter, objectLayerFilter: ^ObjectLayerFilter, bodyFilter: ^BodyFilter, shapeFilter: ^ShapeFilter) -> bool ---
+	NarrowPhaseQuery_CollideShape2 :: proc(query: ^NarrowPhaseQuery, shape: ^Shape, scale: ^Vec3, centerOfMassTransform: ^RMat4, settings: ^CollideShapeSettings, baseOffset: ^RVec3, collectorType: CollisionCollectorType, callback: CollideShapeResultCallback, userData: rawptr, broadPhaseLayerFilter: ^BroadPhaseLayerFilter, objectLayerFilter: ^ObjectLayerFilter, bodyFilter: ^BodyFilter, shapeFilter: ^ShapeFilter) -> bool ---
+	NarrowPhaseQuery_CastShape     :: proc(query: ^NarrowPhaseQuery, shape: ^Shape, worldTransform: ^RMat4, direction: ^Vec3, settings: ^ShapeCastSettings, baseOffset: ^RVec3, callback: CastShapeCollectorCallback, userData: rawptr, broadPhaseLayerFilter: ^BroadPhaseLayerFilter, objectLayerFilter: ^ObjectLayerFilter, bodyFilter: ^BodyFilter, shapeFilter: ^ShapeFilter) -> bool ---
+	NarrowPhaseQuery_CastShape2    :: proc(query: ^NarrowPhaseQuery, shape: ^Shape, worldTransform: ^RMat4, direction: ^Vec3, settings: ^ShapeCastSettings, baseOffset: ^RVec3, collectorType: CollisionCollectorType, callback: CastShapeResultCallback, userData: rawptr, broadPhaseLayerFilter: ^BroadPhaseLayerFilter, objectLayerFilter: ^ObjectLayerFilter, bodyFilter: ^BodyFilter, shapeFilter: ^ShapeFilter) -> bool ---
 
 	//--------------------------------------------------------------------------------------------------
 	// JPH_Body
@@ -1702,7 +1694,7 @@ foreign lib {
 	Body_ResetForce                             :: proc(body: ^Body) ---
 	Body_ResetTorque                            :: proc(body: ^Body) ---
 	Body_ResetMotion                            :: proc(body: ^Body) ---
-	Body_GetInverseInertia                      :: proc(body: ^Body, result: ^Matrix4x4) ---
+	Body_GetInverseInertia                      :: proc(body: ^Body, result: ^Mat4) ---
 	Body_AddImpulse                             :: proc(body: ^Body, impulse: ^Vec3) ---
 	Body_AddImpulseAtPosition                   :: proc(body: ^Body, impulse: ^Vec3, position: ^RVec3) ---
 	Body_AddAngularImpulse                      :: proc(body: ^Body, angularImpulse: ^Vec3) ---
@@ -1713,10 +1705,10 @@ foreign lib {
 	Body_GetShape                               :: proc(body: ^Body) -> ^Shape ---
 	Body_GetPosition                            :: proc(body: ^Body, result: ^RVec3) ---
 	Body_GetRotation                            :: proc(body: ^Body, result: ^Quat) ---
-	Body_GetWorldTransform                      :: proc(body: ^Body, result: ^RMatrix4x4) ---
+	Body_GetWorldTransform                      :: proc(body: ^Body, result: ^RMat4) ---
 	Body_GetCenterOfMassPosition                :: proc(body: ^Body, result: ^RVec3) ---
-	Body_GetCenterOfMassTransform               :: proc(body: ^Body, result: ^RMatrix4x4) ---
-	Body_GetInverseCenterOfMassTransform        :: proc(body: ^Body, result: ^RMatrix4x4) ---
+	Body_GetCenterOfMassTransform               :: proc(body: ^Body, result: ^RMat4) ---
+	Body_GetInverseCenterOfMassTransform        :: proc(body: ^Body, result: ^RMat4) ---
 	Body_GetWorldSpaceBounds                    :: proc(body: ^Body, result: ^AABox) ---
 	Body_GetWorldSpaceSurfaceNormal             :: proc(body: ^Body, subShapeID: SubShapeID, position: ^RVec3, normal: ^Vec3) ---
 	Body_GetMotionProperties                    :: proc(body: ^Body) -> ^MotionProperties ---
@@ -1800,7 +1792,7 @@ foreign lib {
 	Character_GetRotation                 :: proc(character: ^Character, rotation: ^Quat, lockBodies: bool) --- /* = true */
 	Character_SetRotation                 :: proc(character: ^Character, rotation: ^Quat, activationMode: Activation, lockBodies: bool) --- /* = true */
 	Character_GetCenterOfMassPosition     :: proc(character: ^Character, result: ^RVec3, lockBodies: bool) --- /* = true */
-	Character_GetWorldTransform           :: proc(character: ^Character, result: ^RMatrix4x4, lockBodies: bool) --- /* = true */
+	Character_GetWorldTransform           :: proc(character: ^Character, result: ^RMat4, lockBodies: bool) --- /* = true */
 	Character_GetLayer                    :: proc(character: ^Character) -> ObjectLayer ---
 	Character_SetLayer                    :: proc(character: ^Character, value: ObjectLayer, lockBodies: bool) --- /*= true*/
 	Character_SetShape                    :: proc(character: ^Character, shape: ^Shape, maxPenetrationDepth: f32, lockBodies: bool) --- /*= true*/
@@ -1819,8 +1811,8 @@ foreign lib {
 	CharacterVirtual_SetPosition                        :: proc(character: ^CharacterVirtual, position: ^RVec3) ---
 	CharacterVirtual_GetRotation                        :: proc(character: ^CharacterVirtual, rotation: ^Quat) ---
 	CharacterVirtual_SetRotation                        :: proc(character: ^CharacterVirtual, rotation: ^Quat) ---
-	CharacterVirtual_GetWorldTransform                  :: proc(character: ^CharacterVirtual, result: ^RMatrix4x4) ---
-	CharacterVirtual_GetCenterOfMassTransform           :: proc(character: ^CharacterVirtual, result: ^RMatrix4x4) ---
+	CharacterVirtual_GetWorldTransform                  :: proc(character: ^CharacterVirtual, result: ^RMat4) ---
+	CharacterVirtual_GetCenterOfMassTransform           :: proc(character: ^CharacterVirtual, result: ^RMat4) ---
 	CharacterVirtual_GetMass                            :: proc(character: ^CharacterVirtual) -> f32 ---
 	CharacterVirtual_SetMass                            :: proc(character: ^CharacterVirtual, value: f32) ---
 	CharacterVirtual_GetMaxStrength                     :: proc(character: ^CharacterVirtual) -> f32 ---
@@ -1868,9 +1860,9 @@ foreign lib {
 	CharacterVsCharacterCollision_Destroy               :: proc(listener: ^CharacterVsCharacterCollision) ---
 
 	/* CollisionDispatch */
-	CollisionDispatch_CollideShapeVsShape        :: proc(shape1: ^Shape, shape2: ^Shape, scale1: ^Vec3, scale2: ^Vec3, centerOfMassTransform1: ^Matrix4x4, centerOfMassTransform2: ^Matrix4x4, collideShapeSettings: ^CollideShapeSettings, callback: CollideShapeCollectorCallback, userData: rawptr, shapeFilter: ^ShapeFilter) -> bool ---
-	CollisionDispatch_CastShapeVsShapeLocalSpace :: proc(direction: ^Vec3, shape1: ^Shape, shape2: ^Shape, scale1InShape2LocalSpace: ^Vec3, scale2: ^Vec3, centerOfMassTransform1InShape2LocalSpace: ^Matrix4x4, centerOfMassWorldTransform2: ^Matrix4x4, shapeCastSettings: ^ShapeCastSettings, callback: CastShapeCollectorCallback, userData: rawptr, shapeFilter: ^ShapeFilter) -> bool ---
-	CollisionDispatch_CastShapeVsShapeWorldSpace :: proc(direction: ^Vec3, shape1: ^Shape, shape2: ^Shape, scale1: ^Vec3, inScale2: ^Vec3, centerOfMassWorldTransform1: ^Matrix4x4, centerOfMassWorldTransform2: ^Matrix4x4, shapeCastSettings: ^ShapeCastSettings, callback: CastShapeCollectorCallback, userData: rawptr, shapeFilter: ^ShapeFilter) -> bool ---
+	CollisionDispatch_CollideShapeVsShape        :: proc(shape1: ^Shape, shape2: ^Shape, scale1: ^Vec3, scale2: ^Vec3, centerOfMassTransform1: ^Mat4, centerOfMassTransform2: ^Mat4, collideShapeSettings: ^CollideShapeSettings, callback: CollideShapeCollectorCallback, userData: rawptr, shapeFilter: ^ShapeFilter) -> bool ---
+	CollisionDispatch_CastShapeVsShapeLocalSpace :: proc(direction: ^Vec3, shape1: ^Shape, shape2: ^Shape, scale1InShape2LocalSpace: ^Vec3, scale2: ^Vec3, centerOfMassTransform1InShape2LocalSpace: ^Mat4, centerOfMassWorldTransform2: ^Mat4, shapeCastSettings: ^ShapeCastSettings, callback: CastShapeCollectorCallback, userData: rawptr, shapeFilter: ^ShapeFilter) -> bool ---
+	CollisionDispatch_CastShapeVsShapeWorldSpace :: proc(direction: ^Vec3, shape1: ^Shape, shape2: ^Shape, scale1: ^Vec3, inScale2: ^Vec3, centerOfMassWorldTransform1: ^Mat4, centerOfMassWorldTransform2: ^Mat4, shapeCastSettings: ^ShapeCastSettings, callback: CastShapeCollectorCallback, userData: rawptr, shapeFilter: ^ShapeFilter) -> bool ---
 	DebugRenderer_SetProcs                       :: proc(procs: ^DebugRenderer_Procs) ---
 	DebugRenderer_Create                         :: proc(userData: rawptr) -> ^DebugRenderer ---
 	DebugRenderer_Destroy                        :: proc(renderer: ^DebugRenderer) ---
@@ -1878,26 +1870,26 @@ foreign lib {
 	DebugRenderer_SetCameraPos                   :: proc(renderer: ^DebugRenderer, position: ^RVec3) ---
 	DebugRenderer_DrawLine                       :: proc(renderer: ^DebugRenderer, from: ^RVec3, to: ^RVec3, color: Color) ---
 	DebugRenderer_DrawWireBox                    :: proc(renderer: ^DebugRenderer, box: ^AABox, color: Color) ---
-	DebugRenderer_DrawWireBox2                   :: proc(renderer: ^DebugRenderer, _matrix: ^RMatrix4x4, box: ^AABox, color: Color) ---
+	DebugRenderer_DrawWireBox2                   :: proc(renderer: ^DebugRenderer, _matrix: ^RMat4, box: ^AABox, color: Color) ---
 	DebugRenderer_DrawMarker                     :: proc(renderer: ^DebugRenderer, position: ^RVec3, color: Color, size: f32) ---
 	DebugRenderer_DrawArrow                      :: proc(renderer: ^DebugRenderer, from: ^RVec3, to: ^RVec3, color: Color, size: f32) ---
-	DebugRenderer_DrawCoordinateSystem           :: proc(renderer: ^DebugRenderer, _matrix: ^RMatrix4x4, size: f32) ---
+	DebugRenderer_DrawCoordinateSystem           :: proc(renderer: ^DebugRenderer, _matrix: ^RMat4, size: f32) ---
 	DebugRenderer_DrawPlane                      :: proc(renderer: ^DebugRenderer, point: ^RVec3, normal: ^Vec3, color: Color, size: f32) ---
 	DebugRenderer_DrawWireTriangle               :: proc(renderer: ^DebugRenderer, v1: ^RVec3, v2: ^RVec3, v3: ^RVec3, color: Color) ---
 	DebugRenderer_DrawWireSphere                 :: proc(renderer: ^DebugRenderer, center: ^RVec3, radius: f32, color: Color, level: i32) ---
-	DebugRenderer_DrawWireUnitSphere             :: proc(renderer: ^DebugRenderer, _matrix: ^RMatrix4x4, color: Color, level: i32) ---
+	DebugRenderer_DrawWireUnitSphere             :: proc(renderer: ^DebugRenderer, _matrix: ^RMat4, color: Color, level: i32) ---
 	DebugRenderer_DrawTriangle                   :: proc(renderer: ^DebugRenderer, v1: ^RVec3, v2: ^RVec3, v3: ^RVec3, color: Color, castShadow: DebugRenderer_CastShadow) ---
 	DebugRenderer_DrawBox                        :: proc(renderer: ^DebugRenderer, box: ^AABox, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
-	DebugRenderer_DrawBox2                       :: proc(renderer: ^DebugRenderer, _matrix: ^RMatrix4x4, box: ^AABox, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
+	DebugRenderer_DrawBox2                       :: proc(renderer: ^DebugRenderer, _matrix: ^RMat4, box: ^AABox, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
 	DebugRenderer_DrawSphere                     :: proc(renderer: ^DebugRenderer, center: ^RVec3, radius: f32, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
-	DebugRenderer_DrawUnitSphere                 :: proc(renderer: ^DebugRenderer, _matrix: RMatrix4x4, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
-	DebugRenderer_DrawCapsule                    :: proc(renderer: ^DebugRenderer, _matrix: ^RMatrix4x4, halfHeightOfCylinder: f32, radius: f32, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
-	DebugRenderer_DrawCylinder                   :: proc(renderer: ^DebugRenderer, _matrix: ^RMatrix4x4, halfHeight: f32, radius: f32, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
+	DebugRenderer_DrawUnitSphere                 :: proc(renderer: ^DebugRenderer, _matrix: RMat4, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
+	DebugRenderer_DrawCapsule                    :: proc(renderer: ^DebugRenderer, _matrix: ^RMat4, halfHeightOfCylinder: f32, radius: f32, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
+	DebugRenderer_DrawCylinder                   :: proc(renderer: ^DebugRenderer, _matrix: ^RMat4, halfHeight: f32, radius: f32, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
 	DebugRenderer_DrawOpenCone                   :: proc(renderer: ^DebugRenderer, top: ^RVec3, axis: ^Vec3, perpendicular: ^Vec3, halfAngle: f32, length: f32, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
-	DebugRenderer_DrawSwingConeLimits            :: proc(renderer: ^DebugRenderer, _matrix: ^RMatrix4x4, swingYHalfAngle: f32, swingZHalfAngle: f32, edgeLength: f32, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
-	DebugRenderer_DrawSwingPyramidLimits         :: proc(renderer: ^DebugRenderer, _matrix: ^RMatrix4x4, minSwingYAngle: f32, maxSwingYAngle: f32, minSwingZAngle: f32, maxSwingZAngle: f32, edgeLength: f32, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
+	DebugRenderer_DrawSwingConeLimits            :: proc(renderer: ^DebugRenderer, _matrix: ^RMat4, swingYHalfAngle: f32, swingZHalfAngle: f32, edgeLength: f32, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
+	DebugRenderer_DrawSwingPyramidLimits         :: proc(renderer: ^DebugRenderer, _matrix: ^RMat4, minSwingYAngle: f32, maxSwingYAngle: f32, minSwingZAngle: f32, maxSwingZAngle: f32, edgeLength: f32, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
 	DebugRenderer_DrawPie                        :: proc(renderer: ^DebugRenderer, center: ^RVec3, radius: f32, normal: ^Vec3, axis: ^Vec3, minAngle: f32, maxAngle: f32, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
-	DebugRenderer_DrawTaperedCylinder            :: proc(renderer: ^DebugRenderer, inMatrix: ^RMatrix4x4, top: f32, bottom: f32, topRadius: f32, bottomRadius: f32, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
+	DebugRenderer_DrawTaperedCylinder            :: proc(renderer: ^DebugRenderer, inMatrix: ^RMat4, top: f32, bottom: f32, topRadius: f32, bottomRadius: f32, color: Color, castShadow: DebugRenderer_CastShadow, drawMode: DebugRenderer_DrawMode) ---
 	Skeleton_Create                              :: proc() -> ^Skeleton ---
 	Skeleton_Destroy                             :: proc(skeleton: ^Skeleton) ---
 	Skeleton_AddJoint                            :: proc(skeleton: ^Skeleton, name: cstring) -> u32 ---
@@ -1915,7 +1907,7 @@ foreign lib {
 	RagdollSettings_GetSkeleton                           :: proc(character: ^RagdollSettings) -> ^Skeleton ---
 	RagdollSettings_SetSkeleton                           :: proc(character: ^RagdollSettings, skeleton: ^Skeleton) ---
 	RagdollSettings_Stabilize                             :: proc(settings: ^RagdollSettings) -> bool ---
-	RagdollSettings_DisableParentChildCollisions          :: proc(settings: ^RagdollSettings, jointMatrices: ^Matrix4x4, minSeparationDistance: f32) --- /*=nullptr*/
+	RagdollSettings_DisableParentChildCollisions          :: proc(settings: ^RagdollSettings, jointMatrices: ^Mat4, minSeparationDistance: f32) --- /*=nullptr*/
 	RagdollSettings_CalculateBodyIndexToConstraintIndex   :: proc(settings: ^RagdollSettings) ---
 	RagdollSettings_GetConstraintIndexForBodyIndex        :: proc(settings: ^RagdollSettings, bodyIndex: i32) -> i32 ---
 	RagdollSettings_CalculateConstraintIndexToBodyIdxPair :: proc(settings: ^RagdollSettings) ---
@@ -1946,8 +1938,8 @@ foreign lib {
 	VehicleConstraint_GetWheelsCount            :: proc(constraint: ^VehicleConstraint) -> u32 ---
 	VehicleConstraint_GetWheel                  :: proc(constraint: ^VehicleConstraint, index: u32) -> ^Wheel ---
 	VehicleConstraint_GetWheelLocalBasis        :: proc(constraint: ^VehicleConstraint, wheel: ^Wheel, outForward: ^Vec3, outUp: ^Vec3, outRight: ^Vec3) ---
-	VehicleConstraint_GetWheelLocalTransform    :: proc(constraint: ^VehicleConstraint, wheelIndex: u32, wheelRight: ^Vec3, wheelUp: ^Vec3, result: ^Matrix4x4) ---
-	VehicleConstraint_GetWheelWorldTransform    :: proc(constraint: ^VehicleConstraint, wheelIndex: u32, wheelRight: ^Vec3, wheelUp: ^Vec3, result: ^RMatrix4x4) ---
+	VehicleConstraint_GetWheelLocalTransform    :: proc(constraint: ^VehicleConstraint, wheelIndex: u32, wheelRight: ^Vec3, wheelUp: ^Vec3, result: ^Mat4) ---
+	VehicleConstraint_GetWheelWorldTransform    :: proc(constraint: ^VehicleConstraint, wheelIndex: u32, wheelRight: ^Vec3, wheelUp: ^Vec3, result: ^RMat4) ---
 
 	/* Wheel */
 	WheelSettings_Create                        :: proc() -> ^WheelSettings ---

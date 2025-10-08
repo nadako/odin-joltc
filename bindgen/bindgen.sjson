@@ -9,7 +9,7 @@ type_overrides = {
     "JPH_Vec3" = "[3]f32"
     "JPH_Vec4" = "[4]f32"
     "JPH_Quat" = "quaternion128"
-    "JPH_Matrix4x4" = "matrix[4,4]f32"
+    "JPH_Mat4" = "matrix[4,4]f32"
 }
 remove_macros = [
     "JOLT_C_H_"
