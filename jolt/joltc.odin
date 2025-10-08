@@ -4,7 +4,11 @@ package jolt
 
 
 
-foreign import lib "joltc.lib"
+when ODIN_OS == .Windows {
+	foreign import lib "joltc.lib"
+} else when ODIN_OS == .Darwin {
+	foreign import lib  "libjoltc.dylib"
+}
 
 // JOLT_C_H_ :: 1
 
