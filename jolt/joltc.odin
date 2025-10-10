@@ -1170,10 +1170,26 @@ foreign lib {
 	MeshShape_GetTriangleUserData                    :: proc(shape: ^MeshShape, id: SubShapeID) -> u32 ---
 
 	/* HeightFieldShape */
-	HeightFieldShapeSettings_Create                         :: proc(samples: ^f32, offset: ^Vec3, scale: ^Vec3, sampleCount: u32) -> ^HeightFieldShapeSettings ---
-	HeightFieldShapeSettings_CreateShape                    :: proc(settings: ^HeightFieldShapeSettings) -> ^HeightFieldShape ---
+	HeightFieldShapeSettings_Create                         :: proc(samples: ^f32, offset: ^Vec3, scale: ^Vec3, sampleCount: u32, materialIndices: ^u8) -> ^HeightFieldShapeSettings ---
 	HeightFieldShapeSettings_DetermineMinAndMaxSample       :: proc(settings: ^HeightFieldShapeSettings, pOutMinValue: ^f32, pOutMaxValue: ^f32, pOutQuantizationScale: ^f32) ---
 	HeightFieldShapeSettings_CalculateBitsPerSampleForError :: proc(settings: ^HeightFieldShapeSettings, maxError: f32) -> u32 ---
+	HeightFieldShapeSettings_GetOffset                      :: proc(shape: ^HeightFieldShapeSettings, result: ^Vec3) ---
+	HeightFieldShapeSettings_SetOffset                      :: proc(settings: ^HeightFieldShapeSettings, value: ^Vec3) ---
+	HeightFieldShapeSettings_GetScale                       :: proc(shape: ^HeightFieldShapeSettings, result: ^Vec3) ---
+	HeightFieldShapeSettings_SetScale                       :: proc(settings: ^HeightFieldShapeSettings, value: ^Vec3) ---
+	HeightFieldShapeSettings_GetSampleCount                 :: proc(settings: ^HeightFieldShapeSettings) -> u32 ---
+	HeightFieldShapeSettings_SetSampleCount                 :: proc(settings: ^HeightFieldShapeSettings, value: u32) ---
+	HeightFieldShapeSettings_GetMinHeightValue              :: proc(settings: ^HeightFieldShapeSettings) -> f32 ---
+	HeightFieldShapeSettings_SetMinHeightValue              :: proc(settings: ^HeightFieldShapeSettings, value: f32) ---
+	HeightFieldShapeSettings_GetMaxHeightValue              :: proc(settings: ^HeightFieldShapeSettings) -> f32 ---
+	HeightFieldShapeSettings_SetMaxHeightValue              :: proc(settings: ^HeightFieldShapeSettings, value: f32) ---
+	HeightFieldShapeSettings_GetBlockSize                   :: proc(settings: ^HeightFieldShapeSettings) -> u32 ---
+	HeightFieldShapeSettings_SetBlockSize                   :: proc(settings: ^HeightFieldShapeSettings, value: u32) ---
+	HeightFieldShapeSettings_GetBitsPerSample               :: proc(settings: ^HeightFieldShapeSettings) -> u32 ---
+	HeightFieldShapeSettings_SetBitsPerSample               :: proc(settings: ^HeightFieldShapeSettings, value: u32) ---
+	HeightFieldShapeSettings_GetActiveEdgeCosThresholdAngle :: proc(settings: ^HeightFieldShapeSettings) -> f32 ---
+	HeightFieldShapeSettings_SetActiveEdgeCosThresholdAngle :: proc(settings: ^HeightFieldShapeSettings, value: f32) ---
+	HeightFieldShapeSettings_CreateShape                    :: proc(settings: ^HeightFieldShapeSettings) -> ^HeightFieldShape ---
 	HeightFieldShape_GetSampleCount                         :: proc(shape: ^HeightFieldShape) -> u32 ---
 	HeightFieldShape_GetBlockSize                           :: proc(shape: ^HeightFieldShape) -> u32 ---
 	HeightFieldShape_GetMaterial                            :: proc(shape: ^HeightFieldShape, x: u32, y: u32) -> ^PhysicsMaterial ---
