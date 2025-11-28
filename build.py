@@ -32,27 +32,27 @@ def main():
         description="Cross-platform build script for joltc and odin-c-bindgen",
     )
     parser.add_argument(
-        "-build-joltc",
+        "--build-joltc",
         action="store_true",
         help="Compile joltc",
     )
     parser.add_argument(
-        "-update-joltc",
+        "--update-joltc",
         action="store_true",
         help="Update joltc",
     )
     parser.add_argument(
-        "-build-bindgen",
+        "--build-bindgen",
         action="store_true",
         help="Compile odin-c-bindgen",
     )
     parser.add_argument(
-        "-update-bindgen",
+        "--update-bindgen",
         action="store_true",
         help="Update odin-c-bindgen",
     )
     parser.add_argument(
-        "-gen-bindings", action="store_true", help="Generate odin bindings for joltc"
+        "--gen-bindings", action="store_true", help="Generate odin bindings for joltc"
     )
 
     args = parser.parse_args()
@@ -149,6 +149,7 @@ def build_joltc(update: bool):
         shutil.copy(build_dir / "lib" / JOLTC_CONFIG / "joltc.lib", Path("jolt"))
     elif IS_LINUX:
         shutil.copy(build_dir / "lib" / "libjoltc.so", Path("jolt"))
+        print("To install, run 'cd joltc/build && sudo make install && sudo ldconfig'")
     elif IS_OSX:
         shutil.copy(build_dir / "lib" / "libjoltc.dylib", Path("jolt"))
 
