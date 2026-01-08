@@ -2351,9 +2351,38 @@ foreign lib {
 	WheeledVehicleController_SetTireMaxImpulseCallback               :: proc(controller: ^WheeledVehicleController, tireMaxImpulseCallback: TireMaxImpulseCallback, userData: rawptr) ---
 	WheeledVehicleController_GetEngine                               :: proc(controller: ^WheeledVehicleController) -> ^VehicleEngine ---
 	WheeledVehicleController_GetTransmission                         :: proc(controller: ^WheeledVehicleController) -> ^VehicleTransmission ---
+}
 
-	/* WheelSettingsTV - WheelTV - TrackedVehicleController */
-	/* TODO: Add VehicleTrack and VehicleTrackSettings */
+VehicleTrack :: struct {}
+
+TrackSide :: enum i32 {
+	Left  = 0,
+	Right = 1,
+}
+
+VehicleTrackSettings :: struct {
+	drivenWheel:       u32,
+	wheels:            ^u32,
+	wheelsCount:       u32,
+	inertia:           f32,
+	angularDamping:    f32,
+	maxBrakeTorque:    f32,
+	differentialRatio: f32,
+}
+
+@(default_calling_convention="c", link_prefix="JPH_")
+foreign lib {
+	VehicleTrackSettings_Init         :: proc(settings: ^VehicleTrackSettings) ---
+	VehicleTrack_GetAngularVelocity   :: proc(track: ^VehicleTrack) -> f32 ---
+	VehicleTrack_SetAngularVelocity   :: proc(track: ^VehicleTrack, velocity: f32) ---
+	VehicleTrack_GetDrivenWheel       :: proc(track: ^VehicleTrack) -> u32 ---
+	VehicleTrack_GetInertia           :: proc(track: ^VehicleTrack) -> f32 ---
+	VehicleTrack_GetAngularDamping    :: proc(track: ^VehicleTrack) -> f32 ---
+	VehicleTrack_GetMaxBrakeTorque    :: proc(track: ^VehicleTrack) -> f32 ---
+	VehicleTrack_GetDifferentialRatio :: proc(track: ^VehicleTrack) -> f32 ---
+	TrackedVehicleController_GetTrack :: proc(controller: ^TrackedVehicleController, side: TrackSide) -> ^VehicleTrack ---
+
+	/* WheelSettingsTV */
 	WheelSettingsTV_Create                           :: proc() -> ^WheelSettingsTV ---
 	WheelSettingsTV_GetLongitudinalFriction          :: proc(settings: ^WheelSettingsTV) -> f32 ---
 	WheelSettingsTV_SetLongitudinalFriction          :: proc(settings: ^WheelSettingsTV, value: f32) ---
