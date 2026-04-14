@@ -83,6 +83,7 @@ OffsetCenterOfMassShape         :: struct {}
 EmptyShape                      :: struct {}
 BodyCreationSettings            :: struct {}
 SoftBodyCreationSettings        :: struct {}
+SoftBodySharedSettings          :: struct {}
 BodyInterface                   :: struct {}
 BodyLockInterface               :: struct {}
 BroadPhaseQuery                 :: struct {}
@@ -267,6 +268,12 @@ SoftBodyConstraintColor :: enum i32 {
 	ConstraintType  = 0, /// Draw different types of constraints in different colors
 	ConstraintGroup = 1, /// Draw constraints in the same group in the same color, non-parallel group will be red
 	ConstraintOrder = 2, /// Draw constraints in the same group in the same color, non-parallel group will be red, and order within each group will be indicated with gradient
+}
+
+SoftBodyBendType :: enum i32 {
+	None     = 0,
+	Distance = 1,
+	Dihedral = 2,
 }
 
 BodyManager_ShapeColor :: enum i32 {
@@ -822,12 +829,14 @@ foreign lib {
 	CollisionEstimationResult_FreeMembers :: proc(result: ^CollisionEstimationResult) ---
 
 	/* JPH_BroadPhaseLayerInterface */
+	BroadPhaseLayerInterface_Destroy                         :: proc(bpInterface: ^BroadPhaseLayerInterface) ---
 	BroadPhaseLayerInterfaceMask_Create                      :: proc(numBroadPhaseLayers: u32) -> ^BroadPhaseLayerInterface ---
 	BroadPhaseLayerInterfaceMask_ConfigureLayer              :: proc(bpInterface: ^BroadPhaseLayerInterface, broadPhaseLayer: BroadPhaseLayer, groupsToInclude: u32, groupsToExclude: u32) ---
 	BroadPhaseLayerInterfaceTable_Create                     :: proc(numObjectLayers: u32, numBroadPhaseLayers: u32) -> ^BroadPhaseLayerInterface ---
 	BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer :: proc(bpInterface: ^BroadPhaseLayerInterface, objectLayer: ObjectLayer, broadPhaseLayer: BroadPhaseLayer) ---
 
 	/* JPH_ObjectLayerPairFilter */
+	ObjectLayerPairFilter_Destroy               :: proc(filter: ^ObjectLayerPairFilter) ---
 	ObjectLayerPairFilterMask_Create            :: proc() -> ^ObjectLayerPairFilter ---
 	ObjectLayerPairFilterMask_GetObjectLayer    :: proc(group: u32, mask: u32) -> ObjectLayer ---
 	ObjectLayerPairFilterMask_GetGroup          :: proc(layer: ObjectLayer) -> u32 ---
@@ -838,6 +847,7 @@ foreign lib {
 	ObjectLayerPairFilterTable_ShouldCollide    :: proc(objectFilter: ^ObjectLayerPairFilter, layer1: ObjectLayer, layer2: ObjectLayer) -> bool ---
 
 	/* JPH_ObjectVsBroadPhaseLayerFilter */
+	ObjectVsBroadPhaseLayerFilter_Destroy     :: proc(filter: ^ObjectVsBroadPhaseLayerFilter) ---
 	ObjectVsBroadPhaseLayerFilterMask_Create  :: proc(broadPhaseLayerInterface: ^BroadPhaseLayerInterface) -> ^ObjectVsBroadPhaseLayerFilter ---
 	ObjectVsBroadPhaseLayerFilterTable_Create :: proc(broadPhaseLayerInterface: ^BroadPhaseLayerInterface, numBroadPhaseLayers: u32, objectLayerPairFilter: ^ObjectLayerPairFilter, numObjectLayers: u32) -> ^ObjectVsBroadPhaseLayerFilter ---
 	DrawSettings_InitDefault                  :: proc(settings: ^DrawSettings) ---
@@ -916,9 +926,11 @@ foreign lib {
 	PhysicsSystem_AddStepListener              :: proc(system: ^PhysicsSystem, listener: ^PhysicsStepListener) ---
 	PhysicsSystem_RemoveStepListener           :: proc(system: ^PhysicsSystem, listener: ^PhysicsStepListener) ---
 	PhysicsSystem_GetBodies                    :: proc(system: ^PhysicsSystem, ids: ^BodyID, count: u32) ---
+	PhysicsSystem_GetActiveBodies              :: proc(system: ^PhysicsSystem, type: BodyType, ids: ^BodyID, count: u32) ---
+	PhysicsSystem_GetActiveBodiesUnsafe        :: proc(system: ^PhysicsSystem, type: BodyType) -> ^BodyID ---
 	PhysicsSystem_GetConstraints               :: proc(system: ^PhysicsSystem, constraints: ^^Constraint, count: u32) ---
 	PhysicsSystem_ActivateBodiesInAABox        :: proc(system: ^PhysicsSystem, box: ^AABox, layer: ObjectLayer) ---
-	PhysicsSystem_DrawBodies                   :: proc(system: ^PhysicsSystem, settings: ^DrawSettings, renderer: ^DebugRenderer, bodyFilter: ^BodyDrawFilter) --- /* = nullptr */
+	PhysicsSystem_DrawBodies                   :: proc(system: ^PhysicsSystem, settings: ^DrawSettings, renderer: ^DebugRenderer, bodyFilter: ^BodyDrawFilter /* = nullptr */) ---
 	PhysicsSystem_DrawConstraints              :: proc(system: ^PhysicsSystem, renderer: ^DebugRenderer) ---
 	PhysicsSystem_DrawConstraintLimits         :: proc(system: ^PhysicsSystem, renderer: ^DebugRenderer) ---
 	PhysicsSystem_DrawConstraintReferenceFrame :: proc(system: ^PhysicsSystem, renderer: ^DebugRenderer) ---
@@ -990,6 +1002,7 @@ foreign lib {
 	Vec3_MultiplyMatrix             :: proc(left: ^Mat4, right: ^Vec3, result: ^Vec3) ---
 	Vec3_Divide                     :: proc(v1: ^Vec3, v2: ^Vec3, result: ^Vec3) ---
 	Vec3_DivideScalar               :: proc(v: ^Vec3, scalar: f32, result: ^Vec3) ---
+	Vec3_GetNormalizedPerpendicular :: proc(v: ^Vec3, result: ^Vec3) ---
 	Mat4_Add                        :: proc(m1: ^Mat4, m2: ^Mat4, result: ^Mat4) ---
 	Mat4_Subtract                   :: proc(m1: ^Mat4, m2: ^Mat4, result: ^Mat4) ---
 	Mat4_Multiply                   :: proc(m1: ^Mat4, m2: ^Mat4, result: ^Mat4) ---
@@ -1019,7 +1032,7 @@ foreign lib {
 	/* GroupFilter/GroupFilterTable */
 	GroupFilter_Destroy                 :: proc(groupFilter: ^GroupFilter) ---
 	GroupFilter_CanCollide              :: proc(groupFilter: ^GroupFilter, group1: ^CollisionGroup, group2: ^CollisionGroup) -> bool ---
-	GroupFilterTable_Create             :: proc(numSubGroups: u32) -> ^GroupFilterTable --- /* = 0*/
+	GroupFilterTable_Create             :: proc(numSubGroups: u32 /* = 0*/) -> ^GroupFilterTable ---
 	GroupFilterTable_DisableCollision   :: proc(table: ^GroupFilterTable, subGroup1: CollisionSubGroupID, subGroup2: CollisionSubGroupID) ---
 	GroupFilterTable_EnableCollision    :: proc(table: ^GroupFilterTable, subGroup1: CollisionSubGroupID, subGroup2: CollisionSubGroupID) ---
 	GroupFilterTable_IsCollisionEnabled :: proc(table: ^GroupFilterTable, subGroup1: CollisionSubGroupID, subGroup2: CollisionSubGroupID) -> bool ---
@@ -1108,7 +1121,7 @@ foreign lib {
 	CylinderShape_GetHalfHeight       :: proc(shape: ^CylinderShape) -> f32 ---
 
 	/* TaperedCylinderShape */
-	TaperedCylinderShapeSettings_Create      :: proc(halfHeightOfTaperedCylinder: f32, topRadius: f32, bottomRadius: f32, convexRadius: f32, material: ^PhysicsMaterial) -> ^TaperedCylinderShapeSettings --- /* = cDefaultConvexRadius*/
+	TaperedCylinderShapeSettings_Create      :: proc(halfHeightOfTaperedCylinder: f32, topRadius: f32, bottomRadius: f32, convexRadius: f32 /* = cDefaultConvexRadius*/, material: ^PhysicsMaterial /* = NULL*/) -> ^TaperedCylinderShapeSettings ---
 	TaperedCylinderShapeSettings_CreateShape :: proc(settings: ^TaperedCylinderShapeSettings) -> ^TaperedCylinderShape ---
 	TaperedCylinderShape_GetTopRadius        :: proc(shape: ^TaperedCylinderShape) -> f32 ---
 	TaperedCylinderShape_GetBottomRadius     :: proc(shape: ^TaperedCylinderShape) -> f32 ---
@@ -1190,7 +1203,7 @@ foreign lib {
 	/* MutableCompoundShape */
 	MutableCompoundShapeSettings_Create     :: proc() -> ^MutableCompoundShapeSettings ---
 	MutableCompoundShape_Create             :: proc(settings: ^MutableCompoundShapeSettings) -> ^MutableCompoundShape ---
-	MutableCompoundShape_AddShape           :: proc(shape: ^MutableCompoundShape, position: ^Vec3, rotation: ^Quat, child: ^Shape, userData: u32, index: u32) -> u32 --- /* = 0 */
+	MutableCompoundShape_AddShape           :: proc(shape: ^MutableCompoundShape, position: ^Vec3, rotation: ^Quat, child: ^Shape, userData: u32 /* = 0 */, index: u32 /* = UINT32_MAX */) -> u32 ---
 	MutableCompoundShape_RemoveShape        :: proc(shape: ^MutableCompoundShape, index: u32) ---
 	MutableCompoundShape_ModifyShape        :: proc(shape: ^MutableCompoundShape, index: u32, position: ^Vec3, rotation: ^Quat) ---
 	MutableCompoundShape_ModifyShape2       :: proc(shape: ^MutableCompoundShape, index: u32, position: ^Vec3, rotation: ^Quat, newShape: ^Shape) ---
@@ -1289,9 +1302,63 @@ foreign lib {
 	BodyCreationSettings_GetMassPropertiesOverride       :: proc(settings: ^BodyCreationSettings, result: ^MassProperties) ---
 	BodyCreationSettings_SetMassPropertiesOverride       :: proc(settings: ^BodyCreationSettings, massProperties: ^MassProperties) ---
 
+	/* JPH_SoftBodySharedSettings */
+	SoftBodySharedSettings_Create            :: proc() -> ^SoftBodySharedSettings ---
+	SoftBodySharedSettings_Destroy           :: proc(settings: ^SoftBodySharedSettings) ---
+	SoftBodySharedSettings_AddVertex         :: proc(settings: ^SoftBodySharedSettings, position: ^Vec3, invMass: f32) ---
+	SoftBodySharedSettings_AddFace           :: proc(settings: ^SoftBodySharedSettings, vertex1: u32, vertex2: u32, vertex3: u32) ---
+	SoftBodySharedSettings_CreateConstraints :: proc(settings: ^SoftBodySharedSettings, compliance: f32, bendType: SoftBodyBendType) ---
+	SoftBodySharedSettings_Optimize          :: proc(settings: ^SoftBodySharedSettings) ---
+
+	/* NOTE: Must be called BEFORE CreateConstraints for correct mass-participation math. */
+	SoftBodySharedSettings_AddPinnedVertex :: proc(settings: ^SoftBodySharedSettings, index: u32) ---
+	SoftBodySharedSettings_GetVertexCount  :: proc(settings: ^SoftBodySharedSettings) -> u32 ---
+
+	/* Vertex data access (verification/retrieval) */
+	SoftBodySharedSettings_GetVertexPosition :: proc(settings: ^SoftBodySharedSettings, index: u32, outPos: ^Vec3) ---
+	SoftBodySharedSettings_AddVertices       :: proc(settings: ^SoftBodySharedSettings, positions: ^Vec3, invMasses: ^f32, count: u32) ---
+	SoftBodySharedSettings_AddFaces          :: proc(settings: ^SoftBodySharedSettings, indices: ^u32, face_count: u32) ---
+
 	/* JPH_SoftBodyCreationSettings */
-	SoftBodyCreationSettings_Create  :: proc() -> ^SoftBodyCreationSettings ---
-	SoftBodyCreationSettings_Destroy :: proc(settings: ^SoftBodyCreationSettings) ---
+	SoftBodyCreationSettings_Create                  :: proc() -> ^SoftBodyCreationSettings ---
+	SoftBodyCreationSettings_Create2                 :: proc(settings: ^SoftBodySharedSettings, position: ^RVec3, rotation: ^Quat, objectLayer: ObjectLayer) -> ^SoftBodyCreationSettings ---
+	SoftBodyCreationSettings_Destroy                 :: proc(settings: ^SoftBodyCreationSettings) ---
+	SoftBodyCreationSettings_GetSettings             :: proc(settings: ^SoftBodyCreationSettings) -> ^SoftBodySharedSettings ---
+	SoftBodyCreationSettings_SetSettings             :: proc(settings: ^SoftBodyCreationSettings, sharedSettings: ^SoftBodySharedSettings) ---
+	SoftBodyCreationSettings_GetPosition             :: proc(settings: ^SoftBodyCreationSettings, result: ^RVec3) ---
+	SoftBodyCreationSettings_SetPosition             :: proc(settings: ^SoftBodyCreationSettings, value: ^RVec3) ---
+	SoftBodyCreationSettings_GetRotation             :: proc(settings: ^SoftBodyCreationSettings, result: ^Quat) ---
+	SoftBodyCreationSettings_SetRotation             :: proc(settings: ^SoftBodyCreationSettings, value: ^Quat) ---
+	SoftBodyCreationSettings_GetUserData             :: proc(settings: ^SoftBodyCreationSettings) -> u64 ---
+	SoftBodyCreationSettings_SetUserData             :: proc(settings: ^SoftBodyCreationSettings, userData: u64) ---
+	SoftBodyCreationSettings_GetObjectLayer          :: proc(settings: ^SoftBodyCreationSettings) -> ObjectLayer ---
+	SoftBodyCreationSettings_SetObjectLayer          :: proc(settings: ^SoftBodyCreationSettings, value: ObjectLayer) ---
+	SoftBodyCreationSettings_GetCollisionGroup       :: proc(settings: ^SoftBodyCreationSettings, result: ^CollisionGroup) ---
+	SoftBodyCreationSettings_SetCollisionGroup       :: proc(settings: ^SoftBodyCreationSettings, group: ^CollisionGroup) ---
+	SoftBodyCreationSettings_GetNumIterations        :: proc(settings: ^SoftBodyCreationSettings) -> u32 ---
+	SoftBodyCreationSettings_SetNumIterations        :: proc(settings: ^SoftBodyCreationSettings, iterations: u32) ---
+	SoftBodyCreationSettings_GetLinearDamping        :: proc(settings: ^SoftBodyCreationSettings) -> f32 ---
+	SoftBodyCreationSettings_SetLinearDamping        :: proc(settings: ^SoftBodyCreationSettings, value: f32) ---
+	SoftBodyCreationSettings_GetMaxLinearVelocity    :: proc(settings: ^SoftBodyCreationSettings) -> f32 ---
+	SoftBodyCreationSettings_SetMaxLinearVelocity    :: proc(settings: ^SoftBodyCreationSettings, value: f32) ---
+	SoftBodyCreationSettings_GetRestitution          :: proc(settings: ^SoftBodyCreationSettings) -> f32 ---
+	SoftBodyCreationSettings_SetRestitution          :: proc(settings: ^SoftBodyCreationSettings, value: f32) ---
+	SoftBodyCreationSettings_GetFriction             :: proc(settings: ^SoftBodyCreationSettings) -> f32 ---
+	SoftBodyCreationSettings_SetFriction             :: proc(settings: ^SoftBodyCreationSettings, value: f32) ---
+	SoftBodyCreationSettings_GetPressure             :: proc(settings: ^SoftBodyCreationSettings) -> f32 ---
+	SoftBodyCreationSettings_SetPressure             :: proc(settings: ^SoftBodyCreationSettings, value: f32) ---
+	SoftBodyCreationSettings_GetGravityFactor        :: proc(settings: ^SoftBodyCreationSettings) -> f32 ---
+	SoftBodyCreationSettings_SetGravityFactor        :: proc(settings: ^SoftBodyCreationSettings, value: f32) ---
+	SoftBodyCreationSettings_GetVertexRadius         :: proc(settings: ^SoftBodyCreationSettings) -> f32 ---
+	SoftBodyCreationSettings_SetVertexRadius         :: proc(settings: ^SoftBodyCreationSettings, value: f32) ---
+	SoftBodyCreationSettings_GetUpdatePosition       :: proc(settings: ^SoftBodyCreationSettings) -> bool ---
+	SoftBodyCreationSettings_SetUpdatePosition       :: proc(settings: ^SoftBodyCreationSettings, value: bool) ---
+	SoftBodyCreationSettings_GetMakeRotationIdentity :: proc(settings: ^SoftBodyCreationSettings) -> bool ---
+	SoftBodyCreationSettings_SetMakeRotationIdentity :: proc(settings: ^SoftBodyCreationSettings, value: bool) ---
+	SoftBodyCreationSettings_GetAllowSleeping        :: proc(settings: ^SoftBodyCreationSettings) -> bool ---
+	SoftBodyCreationSettings_SetAllowSleeping        :: proc(settings: ^SoftBodyCreationSettings, value: bool) ---
+	SoftBodyCreationSettings_GetFacesDoubleSided     :: proc(settings: ^SoftBodyCreationSettings) -> bool ---
+	SoftBodyCreationSettings_SetFacesDoubleSided     :: proc(settings: ^SoftBodyCreationSettings, value: bool) ---
 
 	/* JPH_Constraint */
 	Constraint_Destroy                     :: proc(constraint: ^Constraint) ---
@@ -1493,6 +1560,7 @@ foreign lib {
 	BodyInterface_RemoveAndDestroyBody              :: proc(bodyInterface: ^BodyInterface, bodyID: BodyID) ---
 	BodyInterface_IsAdded                           :: proc(bodyInterface: ^BodyInterface, bodyID: BodyID) -> bool ---
 	BodyInterface_GetBodyType                       :: proc(bodyInterface: ^BodyInterface, bodyID: BodyID) -> BodyType ---
+	PhysicsSystem_GetBodyPtr                        :: proc(system: ^PhysicsSystem, bodyID: BodyID) -> ^Body ---
 	BodyInterface_SetLinearVelocity                 :: proc(bodyInterface: ^BodyInterface, bodyID: BodyID, velocity: ^Vec3) ---
 	BodyInterface_GetLinearVelocity                 :: proc(bodyInterface: ^BodyInterface, bodyID: BodyID, velocity: ^Vec3) ---
 	BodyInterface_GetCenterOfMassPosition           :: proc(bodyInterface: ^BodyInterface, bodyID: BodyID, position: ^RVec3) ---
@@ -1706,6 +1774,9 @@ foreign lib {
 	Body_SetUserData                            :: proc(body: ^Body, userData: u64) ---
 	Body_GetUserData                            :: proc(body: ^Body) -> u64 ---
 	Body_GetFixedToWorldBody                    :: proc() -> ^Body ---
+	Body_GetSoftBodyVertexCount                 :: proc(body: ^Body) -> u32 ---
+	Body_GetSoftBodyVertexPosition              :: proc(body: ^Body, index: u32, outPos: ^Vec3) ---
+	Body_GetSoftBodyVertexPositions             :: proc(body: ^Body, outPositions: ^Vec3, capacity: u32, outCount: ^u32) ---
 }
 
 /* JPH_BroadPhaseLayerFilter_Procs */
@@ -1843,27 +1914,27 @@ foreign lib {
 
 	/* Character */
 	Character_Create                      :: proc(settings: ^CharacterSettings, position: ^RVec3, rotation: ^Quat, userData: u64, system: ^PhysicsSystem) -> ^Character ---
-	Character_AddToPhysicsSystem          :: proc(character: ^Character, activationMode: Activation, lockBodies: bool) --- /*= JPH_ActivationActivate */
-	Character_RemoveFromPhysicsSystem     :: proc(character: ^Character, lockBodies: bool) --- /* = true */
-	Character_Activate                    :: proc(character: ^Character, lockBodies: bool) --- /* = true */
-	Character_PostSimulation              :: proc(character: ^Character, maxSeparationDistance: f32, lockBodies: bool) --- /* = true */
-	Character_SetLinearAndAngularVelocity :: proc(character: ^Character, linearVelocity: ^Vec3, angularVelocity: ^Vec3, lockBodies: bool) --- /* = true */
+	Character_AddToPhysicsSystem          :: proc(character: ^Character, activationMode: Activation /*= JPH_ActivationActivate */, lockBodies: bool /* = true */) ---
+	Character_RemoveFromPhysicsSystem     :: proc(character: ^Character, lockBodies: bool /* = true */) ---
+	Character_Activate                    :: proc(character: ^Character, lockBodies: bool /* = true */) ---
+	Character_PostSimulation              :: proc(character: ^Character, maxSeparationDistance: f32, lockBodies: bool /* = true */) ---
+	Character_SetLinearAndAngularVelocity :: proc(character: ^Character, linearVelocity: ^Vec3, angularVelocity: ^Vec3, lockBodies: bool /* = true */) ---
 	Character_GetLinearVelocity           :: proc(character: ^Character, result: ^Vec3) ---
-	Character_SetLinearVelocity           :: proc(character: ^Character, value: ^Vec3, lockBodies: bool) --- /* = true */
-	Character_AddLinearVelocity           :: proc(character: ^Character, value: ^Vec3, lockBodies: bool) --- /* = true */
-	Character_AddImpulse                  :: proc(character: ^Character, value: ^Vec3, lockBodies: bool) --- /* = true */
+	Character_SetLinearVelocity           :: proc(character: ^Character, value: ^Vec3, lockBodies: bool /* = true */) ---
+	Character_AddLinearVelocity           :: proc(character: ^Character, value: ^Vec3, lockBodies: bool /* = true */) ---
+	Character_AddImpulse                  :: proc(character: ^Character, value: ^Vec3, lockBodies: bool /* = true */) ---
 	Character_GetBodyID                   :: proc(character: ^Character) -> BodyID ---
-	Character_GetPositionAndRotation      :: proc(character: ^Character, position: ^RVec3, rotation: ^Quat, lockBodies: bool) --- /* = true */
-	Character_SetPositionAndRotation      :: proc(character: ^Character, position: ^RVec3, rotation: ^Quat, activationMode: Activation, lockBodies: bool) --- /* = true */
-	Character_GetPosition                 :: proc(character: ^Character, position: ^RVec3, lockBodies: bool) --- /* = true */
-	Character_SetPosition                 :: proc(character: ^Character, position: ^RVec3, activationMode: Activation, lockBodies: bool) --- /* = true */
-	Character_GetRotation                 :: proc(character: ^Character, rotation: ^Quat, lockBodies: bool) --- /* = true */
-	Character_SetRotation                 :: proc(character: ^Character, rotation: ^Quat, activationMode: Activation, lockBodies: bool) --- /* = true */
-	Character_GetCenterOfMassPosition     :: proc(character: ^Character, result: ^RVec3, lockBodies: bool) --- /* = true */
-	Character_GetWorldTransform           :: proc(character: ^Character, result: ^RMat4, lockBodies: bool) --- /* = true */
+	Character_GetPositionAndRotation      :: proc(character: ^Character, position: ^RVec3, rotation: ^Quat, lockBodies: bool /* = true */) ---
+	Character_SetPositionAndRotation      :: proc(character: ^Character, position: ^RVec3, rotation: ^Quat, activationMode: Activation, lockBodies: bool /* = true */) ---
+	Character_GetPosition                 :: proc(character: ^Character, position: ^RVec3, lockBodies: bool /* = true */) ---
+	Character_SetPosition                 :: proc(character: ^Character, position: ^RVec3, activationMode: Activation, lockBodies: bool /* = true */) ---
+	Character_GetRotation                 :: proc(character: ^Character, rotation: ^Quat, lockBodies: bool /* = true */) ---
+	Character_SetRotation                 :: proc(character: ^Character, rotation: ^Quat, activationMode: Activation, lockBodies: bool /* = true */) ---
+	Character_GetCenterOfMassPosition     :: proc(character: ^Character, result: ^RVec3, lockBodies: bool /* = true */) ---
+	Character_GetWorldTransform           :: proc(character: ^Character, result: ^RMat4, lockBodies: bool /* = true */) ---
 	Character_GetLayer                    :: proc(character: ^Character) -> ObjectLayer ---
-	Character_SetLayer                    :: proc(character: ^Character, value: ObjectLayer, lockBodies: bool) --- /*= true*/
-	Character_SetShape                    :: proc(character: ^Character, shape: ^Shape, maxPenetrationDepth: f32, lockBodies: bool) --- /*= true*/
+	Character_SetLayer                    :: proc(character: ^Character, value: ObjectLayer, lockBodies: bool /*= true*/) ---
+	Character_SetShape                    :: proc(character: ^Character, shape: ^Shape, maxPenetrationDepth: f32, lockBodies: bool /*= true*/) ---
 
 	/* CharacterVirtualSettings */
 	CharacterVirtualSettings_Init :: proc(settings: ^CharacterVirtualSettings) ---
@@ -2067,7 +2138,7 @@ foreign lib {
 	RagdollSettings_GetSkeleton                           :: proc(character: ^RagdollSettings) -> ^Skeleton ---
 	RagdollSettings_SetSkeleton                           :: proc(character: ^RagdollSettings, skeleton: ^Skeleton) ---
 	RagdollSettings_Stabilize                             :: proc(settings: ^RagdollSettings) -> bool ---
-	RagdollSettings_DisableParentChildCollisions          :: proc(settings: ^RagdollSettings, jointMatrices: ^Mat4, minSeparationDistance: f32) --- /*=nullptr*/
+	RagdollSettings_DisableParentChildCollisions          :: proc(settings: ^RagdollSettings, jointMatrices: ^Mat4 /*=nullptr*/, minSeparationDistance: f32 /* = 0.0f*/) ---
 	RagdollSettings_CalculateBodyIndexToConstraintIndex   :: proc(settings: ^RagdollSettings) ---
 	RagdollSettings_GetConstraintIndexForBodyIndex        :: proc(settings: ^RagdollSettings, bodyIndex: i32) -> i32 ---
 	RagdollSettings_CalculateConstraintIndexToBodyIdxPair :: proc(settings: ^RagdollSettings) ---
@@ -2080,26 +2151,26 @@ foreign lib {
 	RagdollSettings_SetPartObjectLayer                    :: proc(settings: ^RagdollSettings, partIndex: i32, layer: ObjectLayer) ---
 	RagdollSettings_SetPartMassProperties                 :: proc(settings: ^RagdollSettings, partIndex: i32, mass: f32) ---
 	RagdollSettings_SetPartToParent                       :: proc(settings: ^RagdollSettings, partIndex: i32, constraintSettings: ^SwingTwistConstraintSettings) ---
-	RagdollSettings_CreateRagdoll                         :: proc(settings: ^RagdollSettings, system: ^PhysicsSystem, collisionGroup: CollisionGroupID, userData: u64) -> ^Ragdoll --- /*=0*/
+	RagdollSettings_CreateRagdoll                         :: proc(settings: ^RagdollSettings, system: ^PhysicsSystem, collisionGroup: CollisionGroupID /*=0*/, userData: u64 /* = 0*/) -> ^Ragdoll ---
 
 	/* Ragdoll */
 	Ragdoll_Destroy                    :: proc(ragdoll: ^Ragdoll) ---
-	Ragdoll_AddToPhysicsSystem         :: proc(ragdoll: ^Ragdoll, activationMode: Activation, lockBodies: bool) --- /*= JPH_ActivationActivate */
-	Ragdoll_RemoveFromPhysicsSystem    :: proc(ragdoll: ^Ragdoll, lockBodies: bool) --- /* = true */
-	Ragdoll_Activate                   :: proc(ragdoll: ^Ragdoll, lockBodies: bool) --- /* = true */
-	Ragdoll_IsActive                   :: proc(ragdoll: ^Ragdoll, lockBodies: bool) -> bool --- /* = true */
+	Ragdoll_AddToPhysicsSystem         :: proc(ragdoll: ^Ragdoll, activationMode: Activation /*= JPH_ActivationActivate */, lockBodies: bool /* = true */) ---
+	Ragdoll_RemoveFromPhysicsSystem    :: proc(ragdoll: ^Ragdoll, lockBodies: bool /* = true */) ---
+	Ragdoll_Activate                   :: proc(ragdoll: ^Ragdoll, lockBodies: bool /* = true */) ---
+	Ragdoll_IsActive                   :: proc(ragdoll: ^Ragdoll, lockBodies: bool /* = true */) -> bool ---
 	Ragdoll_ResetWarmStart             :: proc(ragdoll: ^Ragdoll) ---
-	Ragdoll_SetPose                    :: proc(ragdoll: ^Ragdoll, pose: ^SkeletonPose, lockBodies: bool) --- /* = true */
-	Ragdoll_SetPose2                   :: proc(ragdoll: ^Ragdoll, rootOffset: ^RVec3, jointMatrices: ^Mat4, lockBodies: bool) --- /* = true */
-	Ragdoll_GetPose                    :: proc(ragdoll: ^Ragdoll, outPose: ^SkeletonPose, lockBodies: bool) --- /* = true */
-	Ragdoll_GetPose2                   :: proc(ragdoll: ^Ragdoll, outRootOffset: ^RVec3, outJointMatrices: ^Mat4, lockBodies: bool) --- /* = true */
+	Ragdoll_SetPose                    :: proc(ragdoll: ^Ragdoll, pose: ^SkeletonPose, lockBodies: bool /* = true */) ---
+	Ragdoll_SetPose2                   :: proc(ragdoll: ^Ragdoll, rootOffset: ^RVec3, jointMatrices: ^Mat4, lockBodies: bool /* = true */) ---
+	Ragdoll_GetPose                    :: proc(ragdoll: ^Ragdoll, outPose: ^SkeletonPose, lockBodies: bool /* = true */) ---
+	Ragdoll_GetPose2                   :: proc(ragdoll: ^Ragdoll, outRootOffset: ^RVec3, outJointMatrices: ^Mat4, lockBodies: bool /* = true */) ---
 	Ragdoll_DriveToPoseUsingMotors     :: proc(ragdoll: ^Ragdoll, pose: ^SkeletonPose) ---
-	Ragdoll_DriveToPoseUsingKinematics :: proc(ragdoll: ^Ragdoll, pose: ^SkeletonPose, deltaTime: f32, lockBodies: bool) --- /* = true */
+	Ragdoll_DriveToPoseUsingKinematics :: proc(ragdoll: ^Ragdoll, pose: ^SkeletonPose, deltaTime: f32, lockBodies: bool /* = true */) ---
 	Ragdoll_GetBodyCount               :: proc(ragdoll: ^Ragdoll) -> i32 ---
 	Ragdoll_GetBodyID                  :: proc(ragdoll: ^Ragdoll, bodyIndex: i32) -> BodyID ---
 	Ragdoll_GetConstraintCount         :: proc(ragdoll: ^Ragdoll) -> i32 ---
 	Ragdoll_GetConstraint              :: proc(ragdoll: ^Ragdoll, constraintIndex: i32) -> ^TwoBodyConstraint ---
-	Ragdoll_GetRootTransform           :: proc(ragdoll: ^Ragdoll, outPosition: ^RVec3, outRotation: ^Quat, lockBodies: bool) --- /* = true */
+	Ragdoll_GetRootTransform           :: proc(ragdoll: ^Ragdoll, outPosition: ^RVec3, outRotation: ^Quat, lockBodies: bool /* = true */) ---
 	Ragdoll_GetRagdollSettings         :: proc(ragdoll: ^Ragdoll) -> ^RagdollSettings ---
 
 	/* JPH_EstimateCollisionResponse */
@@ -2287,6 +2358,7 @@ foreign lib {
 	VehicleTransmissionSettings_SetClutchStrength        :: proc(settings: ^VehicleTransmissionSettings, value: f32) ---
 
 	/* VehicleTransmission */
+	VehicleTransmission_SetMode           :: proc(transmission: ^VehicleTransmission, mode: TransmissionMode) ---
 	VehicleTransmission_Set               :: proc(transmission: ^VehicleTransmission, currentGear: i32, clutchFriction: f32) ---
 	VehicleTransmission_Update            :: proc(transmission: ^VehicleTransmission, deltaTime: f32, currentRPM: f32, forwardInput: f32, canShiftUp: bool) ---
 	VehicleTransmission_GetCurrentGear    :: proc(transmission: ^VehicleTransmission) -> i32 ---
@@ -2336,6 +2408,7 @@ foreign lib {
 	WheeledVehicleControllerSettings_GetDifferential                 :: proc(settings: ^WheeledVehicleControllerSettings, index: u32, result: ^VehicleDifferentialSettings) ---
 	WheeledVehicleControllerSettings_SetDifferential                 :: proc(settings: ^WheeledVehicleControllerSettings, index: u32, value: ^VehicleDifferentialSettings) ---
 	WheeledVehicleControllerSettings_SetDifferentials                :: proc(settings: ^WheeledVehicleControllerSettings, values: ^VehicleDifferentialSettings, count: u32) ---
+	WheeledVehicleControllerSettings_AddDifferential                 :: proc(settings: ^WheeledVehicleControllerSettings, leftWheel: i32, rightWheel: i32) ---
 	WheeledVehicleControllerSettings_GetDifferentialLimitedSlipRatio :: proc(settings: ^WheeledVehicleControllerSettings) -> f32 ---
 	WheeledVehicleControllerSettings_SetDifferentialLimitedSlipRatio :: proc(settings: ^WheeledVehicleControllerSettings, value: f32) ---
 	WheeledVehicleController_SetDriverInput                          :: proc(controller: ^WheeledVehicleController, forward: f32, right: f32, brake: f32, handBrake: f32) ---
@@ -2395,6 +2468,7 @@ foreign lib {
 	TrackedVehicleControllerSettings_SetEngine       :: proc(settings: ^TrackedVehicleControllerSettings, value: ^VehicleEngineSettings) ---
 	TrackedVehicleControllerSettings_GetTransmission :: proc(settings: ^TrackedVehicleControllerSettings) -> ^VehicleTransmissionSettings ---
 	TrackedVehicleControllerSettings_SetTransmission :: proc(settings: ^TrackedVehicleControllerSettings, value: ^VehicleTransmissionSettings) ---
+	TrackedVehicleControllerSettings_SetTrack        :: proc(settings: ^TrackedVehicleControllerSettings, index: u32, track: ^VehicleTrackSettings) ---
 	TrackedVehicleController_SetDriverInput          :: proc(controller: ^TrackedVehicleController, forward: f32, leftRatio: f32, rightRatio: f32, brake: f32) ---
 	TrackedVehicleController_GetForwardInput         :: proc(controller: ^TrackedVehicleController) -> f32 ---
 	TrackedVehicleController_SetForwardInput         :: proc(controller: ^TrackedVehicleController, value: f32) ---
