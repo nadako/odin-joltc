@@ -351,6 +351,20 @@ MassProperties :: struct {
 	inertia: Mat4,
 }
 
+SoftVertex :: struct {
+	position: Vec3,
+	velocity: Vec3,
+	invMass:  f32,
+}
+
+/// A face defines the surface of the body
+SoftFace :: struct {
+	vertex1:       u32,
+	vertex2:       u32,
+	vertex3:       u32,
+	materialIndex: u32,
+}
+
 ContactSettings :: struct {
 	combinedFriction:               f32,
 	combinedRestitution:            f32,
@@ -1305,19 +1319,18 @@ foreign lib {
 	/* JPH_SoftBodySharedSettings */
 	SoftBodySharedSettings_Create            :: proc() -> ^SoftBodySharedSettings ---
 	SoftBodySharedSettings_Destroy           :: proc(settings: ^SoftBodySharedSettings) ---
-	SoftBodySharedSettings_AddVertex         :: proc(settings: ^SoftBodySharedSettings, position: ^Vec3, invMass: f32) ---
-	SoftBodySharedSettings_AddFace           :: proc(settings: ^SoftBodySharedSettings, vertex1: u32, vertex2: u32, vertex3: u32) ---
+	SoftBodySharedSettings_AddVertex         :: proc(settings: ^SoftBodySharedSettings, vertex: ^SoftVertex) ---
+	SoftBodySharedSettings_AddVertices       :: proc(settings: ^SoftBodySharedSettings, vertices: ^SoftVertex, count: u32) ---
+	SoftBodySharedSettings_RemoveVertex      :: proc(settings: ^SoftBodySharedSettings, index: u32) -> bool ---
+	SoftBodySharedSettings_GetVertexCount    :: proc(settings: ^SoftBodySharedSettings) -> u32 ---
+	SoftBodySharedSettings_GetVertex         :: proc(settings: ^SoftBodySharedSettings, index: u32, outVertex: ^SoftVertex) -> bool ---
+	SoftBodySharedSettings_AddFace           :: proc(settings: ^SoftBodySharedSettings, face: ^SoftFace) ---
+	SoftBodySharedSettings_AddFaces          :: proc(settings: ^SoftBodySharedSettings, faces: ^SoftFace, count: u32) ---
+	SoftBodySharedSettings_RemoveFace        :: proc(settings: ^SoftBodySharedSettings, index: u32) -> bool ---
+	SoftBodySharedSettings_GetFaceCount      :: proc(settings: ^SoftBodySharedSettings) -> u32 ---
+	SoftBodySharedSettings_GetFace           :: proc(settings: ^SoftBodySharedSettings, index: u32, outFace: ^SoftFace) -> bool ---
 	SoftBodySharedSettings_CreateConstraints :: proc(settings: ^SoftBodySharedSettings, compliance: f32, bendType: SoftBodyBendType) ---
 	SoftBodySharedSettings_Optimize          :: proc(settings: ^SoftBodySharedSettings) ---
-
-	/* NOTE: Must be called BEFORE CreateConstraints for correct mass-participation math. */
-	SoftBodySharedSettings_AddPinnedVertex :: proc(settings: ^SoftBodySharedSettings, index: u32) ---
-	SoftBodySharedSettings_GetVertexCount  :: proc(settings: ^SoftBodySharedSettings) -> u32 ---
-
-	/* Vertex data access (verification/retrieval) */
-	SoftBodySharedSettings_GetVertexPosition :: proc(settings: ^SoftBodySharedSettings, index: u32, outPos: ^Vec3) ---
-	SoftBodySharedSettings_AddVertices       :: proc(settings: ^SoftBodySharedSettings, positions: ^Vec3, invMasses: ^f32, count: u32) ---
-	SoftBodySharedSettings_AddFaces          :: proc(settings: ^SoftBodySharedSettings, indices: ^u32, face_count: u32) ---
 
 	/* JPH_SoftBodyCreationSettings */
 	SoftBodyCreationSettings_Create                  :: proc() -> ^SoftBodyCreationSettings ---
