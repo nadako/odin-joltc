@@ -2539,3 +2539,15 @@ foreign lib {
 	LinearCurve_GetPoints     :: proc(curve: ^LinearCurve, points: ^Point, count: ^u32) ---
 }
 
+TempAllocator :: struct {}
+
+@(default_calling_convention="c", link_prefix="JPH_")
+foreign lib {
+	TempAllocator_Create       :: proc(size: u32) -> ^TempAllocator ---
+	TempAllocatorMalloc_Create :: proc() -> ^TempAllocator ---
+	TempAllocator_Destroy      :: proc(allocator: ^TempAllocator) ---
+
+	/* Explicit Allocator Variants */
+	PhysicsSystem_Update2 :: proc(system: ^PhysicsSystem, deltaTime: f32, collisionSteps: i32, tempAllocator: ^TempAllocator, jobSystem: ^JobSystem) -> PhysicsUpdateError ---
+}
+
