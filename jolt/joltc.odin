@@ -805,6 +805,11 @@ CharacterVirtualContact :: struct {
 
 TraceFunc         :: proc "c" (message: cstring)
 AssertFailureFunc :: proc "c" (expression: cstring, message: cstring, file: cstring, line: u32) -> bool
+AllocateFunc      :: proc "c" (size: uintptr) -> rawptr
+ReallocateFunc    :: proc "c" (block: rawptr, old_size: uintptr, new_size: uintptr) -> rawptr
+FreeFunc          :: proc "c" (block: rawptr)
+AlignedAllocateFunc :: proc "c" (size: uintptr, alignment: uintptr) -> rawptr
+AlignedFreeFunc   :: proc "c" (block: rawptr)
 JobFunction       :: proc "c" (arg: rawptr)
 QueueJobCallback  :: proc "c" (_context: rawptr, job: JobFunction, arg: rawptr)
 QueueJobsCallback :: proc "c" (_context: rawptr, job: JobFunction, args: ^rawptr, count: u32)
@@ -835,6 +840,7 @@ foreign lib {
 	JobSystem_Destroy          :: proc(jobSystem: ^JobSystem) ---
 	Init                       :: proc() -> bool ---
 	Shutdown                   :: proc() ---
+	SetMemoryFunctions         :: proc(allocate: AllocateFunc, reallocate: ReallocateFunc, free_fn: FreeFunc, aligned_allocate: AlignedAllocateFunc, aligned_free: AlignedFreeFunc) -> bool ---
 	SetTraceHandler            :: proc(handler: TraceFunc) ---
 	SetAssertFailureHandler    :: proc(handler: AssertFailureFunc) ---
 
@@ -2550,4 +2556,3 @@ foreign lib {
 	/* Explicit Allocator Variants */
 	PhysicsSystem_Update2 :: proc(system: ^PhysicsSystem, deltaTime: f32, collisionSteps: i32, tempAllocator: ^TempAllocator, jobSystem: ^JobSystem) -> PhysicsUpdateError ---
 }
-
