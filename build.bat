@@ -1,9 +1,9 @@
-@REM this will probably only work on my machine, since i have vcvarsall.bat in path
+@REM this will probably only work on my machine, but should be easy enough to adapt (e.g. path to vcvarsall.bat)
 @echo off
 setlocal
 
 set CONFIG=Release
-set BUILD=vs2022_x64
+set BUILD=vs2026_x64
 
 pushd joltc\build
 
@@ -11,8 +11,8 @@ del /F /S /Q %BUILD%
 call cmake_%BUILD%.bat
 
 cd %BUILD%
-call vcvarsall.bat amd64
-msbuild joltc.sln /p:Configuration=%CONFIG%
+call "c:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64
+msbuild joltc.slnx /p:Configuration=%CONFIG%
 
 popd
 

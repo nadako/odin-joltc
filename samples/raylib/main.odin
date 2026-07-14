@@ -104,19 +104,19 @@ add_character :: proc(physics_system: ^jolt.PhysicsSystem) -> ^jolt.CharacterVir
     // use static var so the pointers survive
     @static listener_procs: jolt.CharacterContactListener_Procs
     listener_procs = {
-        OnContactAdded = proc "c" (context_ptr: rawptr, character: ^jolt.CharacterVirtual, other_body_id: jolt.BodyID, _: jolt.SubShapeID, contact_point: ^Vec3, contact_normal: ^Vec3, contact_settings: ^jolt.CharacterContactSettings) {
-            if other_body_id == g_floor_body_id do return
+        OnContactAdded = proc "c" (context_ptr: rawptr, character: ^jolt.CharacterVirtual, contact: ^jolt.CharacterContact, contact_settings: ^jolt.CharacterContactSettings) {
+            if contact.bodyB == g_floor_body_id do return
 
             context = (cast(^runtime.Context)context_ptr)^
 
-            log.debugf("Contact added: %v", other_body_id)
+            log.debugf("Contact added: %v", contact.bodyB)
         },
-        OnContactPersisted = proc "c" (context_ptr: rawptr, character: ^jolt.CharacterVirtual, other_body_id: jolt.BodyID, _: jolt.SubShapeID, contact_point: ^Vec3, contact_normal: ^Vec3, contact_settings: ^jolt.CharacterContactSettings) {
-            if other_body_id == g_floor_body_id do return
+        OnContactPersisted = proc "c" (context_ptr: rawptr, character: ^jolt.CharacterVirtual, contact: ^jolt.CharacterContact, contact_settings: ^jolt.CharacterContactSettings) {
+            if contact.bodyB == g_floor_body_id do return
 
             context = (cast(^runtime.Context)context_ptr)^
 
-            log.debugf("Contact persisted: %v", other_body_id)
+            log.debugf("Contact persisted: %v", contact.bodyB)
         },
         OnContactRemoved = proc "c" (context_ptr: rawptr, character: ^jolt.CharacterVirtual, other_body_id: jolt.BodyID, _: jolt.SubShapeID) {
             if other_body_id == g_floor_body_id do return
@@ -280,7 +280,7 @@ main :: proc() {
                 // if we're on the ground, try pushing currect contacts away
                 if jolt.CharacterBase_GetGroundState(auto_cast physics_character) == .OnGround {
                     for i in 0..<jolt.CharacterVirtual_GetNumActiveContacts(physics_character) {
-                        contact:jolt.CharacterVirtualContact; jolt.CharacterVirtual_GetActiveContact(physics_character, i, &contact)
+                        contact:jolt.CharacterContact; jolt.CharacterVirtual_GetActiveContact(physics_character, i, &contact)
                         if contact.bodyB == g_floor_body_id do continue
                         if contact.motionTypeB == .Dynamic {
                             PUSH_FORCE :: 100
